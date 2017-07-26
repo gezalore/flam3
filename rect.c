@@ -444,31 +444,6 @@ static void iter_thread(void *fth) {
             b = buckets + (int)(ficp->ws0 * p0 - ficp->wb0s0) +
                 ficp->width * (int)(ficp->hs1 * p1 - ficp->hb1s1);
 
-#ifdef USE_FLOAT_INDICES
-            color_index0 = 0;
-            
-            //fprintf(stdout,"%.16f\n",p[2]*256.0);
-            
-            while(color_index0 < cmap_size_m1) {
-            	if (ficp->dmap[color_index0+1].index > p[2])
-            	   break;
-            	else
-            	   color_index0++;
-            }
-            
-            if (p[3]==1.0) {
-               bump_no_overflow(b[0][0], ficp->dmap[color_index0].color[0]);
-               bump_no_overflow(b[0][1], ficp->dmap[color_index0].color[1]);
-               bump_no_overflow(b[0][2], ficp->dmap[color_index0].color[2]);
-               bump_no_overflow(b[0][3], ficp->dmap[color_index0].color[3]);
-               bump_no_overflow(b[0][4], 255.0);
-            } else {
-               bump_no_overflow(b[0][0], logvis*ficp->dmap[color_index0].color[0]);
-               bump_no_overflow(b[0][1], logvis*ficp->dmap[color_index0].color[1]);
-               bump_no_overflow(b[0][2], logvis*ficp->dmap[color_index0].color[2]);
-               bump_no_overflow(b[0][3], logvis*ficp->dmap[color_index0].color[3]);
-               bump_no_overflow(b[0][4], logvis*255.0);
-#else
             dbl_index0 = p[2] * cmap_size;
             color_index0 = (int) (dbl_index0);
             
@@ -514,8 +489,6 @@ static void iter_thread(void *fth) {
                bump_no_overflow(b[0][3], logvis*interpcolor[3]);
                bump_no_overflow(b[0][4], logvis*255.0);
             }
-#endif
-
          }
       }
       

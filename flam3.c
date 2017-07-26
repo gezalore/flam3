@@ -1858,13 +1858,8 @@ void flam3_print(FILE *f, flam3_genome *cp, char *extra_attributes, int print_ed
       
          if (getenv("intpalette"))
             fprintf(f, "<color index=\"%d\" rgb=\"%d %d %d\"/>", i, (int)rint(r), (int)rint(g), (int)rint(b));
-         else {
-#ifdef USE_FLOAT_INDICES
-            fprintf(f, "<color index=\"%.10g\" rgb=\"%.6g %.6g %.6g\"/>", cp->palette[i].index, r, g, b);
-#else
+         else 
             fprintf(f, "<color index=\"%d\" rgb=\"%.6g %.6g %.6g\"/>", i, r, g, b);
-#endif
-         }
       } else {
          if (getenv("intpalette"))
             fprintf(f, "   <color index=\"%d\" rgba=\"%d %d %d %d\"/>", i, (int)rint(r), (int)rint(g), (int)rint(b), (int)rint(a));
