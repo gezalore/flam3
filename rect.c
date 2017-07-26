@@ -430,65 +430,66 @@ static void iter_thread(void *fth) {
             p1 = p[1];
          }
 
-         if (p0 >= ficp->bounds[0] && p1 >= ficp->bounds[1] && p0 <= ficp->bounds[2] && p1 <= ficp->bounds[3]) {
+         if (p0 < ficp->bounds[0] || p1 < ficp->bounds[1] || p0 > ficp->bounds[2] || p1 > ficp->bounds[3]) {
+           continue;
+         }
 
-            double logvis=1.0;
-            bucket *buckets = (bucket *)(fthp->buckets);
+         double logvis=1.0;
+         bucket *buckets = (bucket *)(fthp->buckets);
 
-            /* Skip if invisible */
-            if (p[3]==0)
-               continue;
-            else
-               logvis = p[3];
-            
-            b = buckets + (int)(ficp->ws0 * p0 - ficp->wb0s0) +
-                ficp->width * (int)(ficp->hs1 * p1 - ficp->hb1s1);
+         /* Skip if invisible */
+         if (p[3]==0)
+            continue;
+         else
+            logvis = p[3];
 
-            dbl_index0 = p[2] * cmap_size;
-            color_index0 = (int) (dbl_index0);
-            
-            if (flam3_palette_mode_linear == fthp->cp.palette_mode) {
-               if (color_index0 < 0) {
-                  color_index0 = 0;
-                  dbl_frac = 0;
-               } else if (color_index0 >= cmap_size_m1) {
-                  color_index0 = cmap_size_m1-1;
-                  dbl_frac = 1.0;
-               } else {
-                  /* interpolate between color_index0 and color_index0+1 */
-                  dbl_frac = dbl_index0 - (double)color_index0;
-               }
-                        
-               for (ci=0;ci<4;ci++) {
-                  interpcolor[ci] = ficp->dmap[color_index0].color[ci] * (1.0-dbl_frac) + 
-                                    ficp->dmap[color_index0+1].color[ci] * dbl_frac;               
-               }
-               
-            } else { /* Palette mode step */
-            
-               if (color_index0 < 0) {
-                  color_index0 = 0;
-               } else if (color_index0 >= cmap_size_m1) {
-                  color_index0 = cmap_size_m1;
-               }
-                        
-               for (ci=0;ci<4;ci++)
-                  interpcolor[ci] = ficp->dmap[color_index0].color[ci];               
-            }
+         b = buckets + (int)(ficp->ws0 * p0 - ficp->wb0s0) +
+             ficp->width * (int)(ficp->hs1 * p1 - ficp->hb1s1);
 
-            if (p[3]==1.0) {
-               bump_no_overflow(b[0][0], interpcolor[0]);
-               bump_no_overflow(b[0][1], interpcolor[1]);
-               bump_no_overflow(b[0][2], interpcolor[2]);
-               bump_no_overflow(b[0][3], interpcolor[3]);
-               bump_no_overflow(b[0][4], 255.0);
+         dbl_index0 = p[2] * cmap_size;
+         color_index0 = (int) (dbl_index0);
+
+         if (flam3_palette_mode_linear == fthp->cp.palette_mode) {
+            if (color_index0 < 0) {
+               color_index0 = 0;
+               dbl_frac = 0;
+            } else if (color_index0 >= cmap_size_m1) {
+               color_index0 = cmap_size_m1-1;
+               dbl_frac = 1.0;
             } else {
-               bump_no_overflow(b[0][0], logvis*interpcolor[0]);
-               bump_no_overflow(b[0][1], logvis*interpcolor[1]);
-               bump_no_overflow(b[0][2], logvis*interpcolor[2]);
-               bump_no_overflow(b[0][3], logvis*interpcolor[3]);
-               bump_no_overflow(b[0][4], logvis*255.0);
+               /* interpolate between color_index0 and color_index0+1 */
+               dbl_frac = dbl_index0 - (double)color_index0;
             }
+
+            for (ci=0;ci<4;ci++) {
+               interpcolor[ci] = ficp->dmap[color_index0].color[ci] * (1.0-dbl_frac) +
+                                 ficp->dmap[color_index0+1].color[ci] * dbl_frac;
+            }
+
+         } else { /* Palette mode step */
+
+            if (color_index0 < 0) {
+               color_index0 = 0;
+            } else if (color_index0 >= cmap_size_m1) {
+               color_index0 = cmap_size_m1;
+            }
+
+            for (ci=0;ci<4;ci++)
+               interpcolor[ci] = ficp->dmap[color_index0].color[ci];
+         }
+
+         if (p[3]==1.0) {
+            bump_no_overflow(b[0][0], interpcolor[0]);
+            bump_no_overflow(b[0][1], interpcolor[1]);
+            bump_no_overflow(b[0][2], interpcolor[2]);
+            bump_no_overflow(b[0][3], interpcolor[3]);
+            bump_no_overflow(b[0][4], 255.0);
+         } else {
+            bump_no_overflow(b[0][0], logvis*interpcolor[0]);
+            bump_no_overflow(b[0][1], logvis*interpcolor[1]);
+            bump_no_overflow(b[0][2], logvis*interpcolor[2]);
+            bump_no_overflow(b[0][3], logvis*interpcolor[3]);
+            bump_no_overflow(b[0][4], logvis*255.0);
          }
       }
       
