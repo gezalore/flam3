@@ -2013,6 +2013,110 @@ void xform_precalc(flam3_genome *cp, int xi) {
    wedgeJulia_precalc(&(cp->xform[xi]));   
 }   
 
+typedef void (*varFuncPtr)(flam3_iter_helper *f, double weight);
+
+static varFuncPtr varFuncTab[flam3_nvariations] = {
+   &var0_linear,
+   &var1_sinusoidal,
+   &var2_spherical,
+   &var3_swirl,
+   &var4_horseshoe,
+   &var5_polar,
+   &var6_handkerchief,
+   &var7_heart,
+   &var8_disc,
+   &var9_spiral,
+   &var10_hyperbolic,
+   &var11_diamond,
+   &var12_ex,
+   &var13_julia,
+   &var14_bent,
+   &var15_waves,
+   &var16_fisheye,
+   &var17_popcorn,
+   &var18_exponential,
+   &var19_power,
+   &var20_cosine,
+   &var21_rings,
+   &var22_fan,
+   &var23_blob,
+   &var24_pdj,
+   &var25_fan2,
+   &var26_rings2,
+   &var27_eyefish,
+   &var28_bubble,
+   &var29_cylinder,
+   &var30_perspective,
+   &var31_noise,
+   &var32_juliaN_generic,
+   &var33_juliaScope_generic,
+   &var34_blur,
+   &var35_gaussian,
+   &var36_radial_blur,
+   &var37_pie,
+   &var38_ngon,
+   &var39_curl,
+   &var40_rectangles,
+   &var41_arch,
+   &var42_tangent,
+   &var43_square,
+   &var44_rays,
+   &var45_blade,
+   &var46_secant2,
+   &var47_twintrian,
+   &var48_cross,
+   &var49_disc2,
+   &var50_supershape,
+   &var51_flower,
+   &var52_conic,
+   &var53_parabola,
+   &var54_bent2,
+   &var55_bipolar,
+   &var56_boarders,
+   &var57_butterfly,
+   &var58_cell,
+   &var59_cpow,
+   &var60_curve,
+   &var61_edisc,
+   &var62_elliptic,
+   &var63_escher,
+   &var64_foci,
+   &var65_lazysusan,
+   &var66_loonie,
+   NULL,
+   &var68_modulus,
+   &var69_oscope,
+   &var70_polar2,
+   &var71_popcorn2,
+   &var72_scry,
+   &var73_separation,
+   &var74_split,
+   &var75_splits,
+   &var76_stripes,
+   &var77_wedge,
+   &var78_wedge_julia,
+   &var79_wedge_sph,
+   &var80_whorl,
+   &var81_waves2,
+   &var82_exp,
+   &var83_log,
+   &var84_sin,
+   &var85_cos,
+   &var86_tan,
+   &var87_sec,
+   &var88_csc,
+   &var89_cot,
+   &var90_sinh,
+   &var91_cosh,
+   &var92_tanh,
+   &var93_sech,
+   &var94_csch,
+   &var95_coth,
+   &var96_auger,
+   &var97_flux,
+   &var98_mobius
+};
+
 int prepare_precalc_flags(flam3_genome *cp) {
 
    double d;
@@ -2044,7 +2148,7 @@ int prepare_precalc_flags(flam3_genome *cp) {
 
          if (cp->xform[i].var[j]!=0) {
 
-            cp->xform[i].varFunc[totnum] = j;
+            cp->xform[i].varFunc[totnum] = (void*)varFuncTab[j];
             cp->xform[i].active_var_weights[totnum] = cp->xform[i].var[j];
 
             if (j==VAR_POLAR) {
@@ -2173,212 +2277,13 @@ int apply_xform(flam3_genome *cp, int fn, double *p, double *q, randctx *rc)
    f.p1 = 0.0;
    f.xform = &(cp->xform[fn]);
 
-   
+
    for (var_n=0; var_n < cp->xform[fn].num_active_vars; var_n++) {
-      
       weight = cp->xform[fn].active_var_weights[var_n];
-
-      switch (cp->xform[fn].varFunc[var_n]) {
- 
-         case (VAR_LINEAR):
-            var0_linear(&f, weight); break;               
-         case (VAR_SINUSOIDAL):
-                var1_sinusoidal(&f, weight); break;
-         case (VAR_SPHERICAL):
-                var2_spherical(&f, weight); break;
-         case (VAR_SWIRL):
-                var3_swirl(&f, weight); break;
-         case (VAR_HORSESHOE):
-                var4_horseshoe(&f, weight); break;               
-         case (VAR_POLAR): 
-                var5_polar(&f, weight); break;
-         case (VAR_HANDKERCHIEF):
-                var6_handkerchief(&f, weight); break;               
-         case (VAR_HEART):
-                var7_heart(&f, weight); break;               
-         case (VAR_DISC):
-                var8_disc(&f, weight); break;               
-         case (VAR_SPIRAL):
-                var9_spiral(&f, weight); break;               
-         case (VAR_HYPERBOLIC):
-                var10_hyperbolic(&f, weight); break;               
-         case (VAR_DIAMOND):
-                var11_diamond(&f, weight); break;               
-         case (VAR_EX):
-                var12_ex(&f, weight); break;               
-         case (VAR_JULIA): 
-                var13_julia(&f, weight); break;               
-         case (VAR_BENT):
-                var14_bent(&f, weight); break;
-         case (VAR_WAVES):
-                var15_waves(&f, weight); break;
-         case (VAR_FISHEYE): 
-                var16_fisheye(&f, weight); break;
-         case (VAR_POPCORN):
-                var17_popcorn(&f, weight); break;
-         case (VAR_EXPONENTIAL):
-                var18_exponential(&f, weight); break;
-         case (VAR_POWER): 
-                var19_power(&f, weight); break;               
-         case (VAR_COSINE):
-                var20_cosine(&f, weight); break;
-         case (VAR_RINGS):
-                var21_rings(&f, weight); break;
-         case (VAR_FAN):
-                var22_fan(&f, weight); break;
-         case (VAR_BLOB):
-                var23_blob(&f, weight); break;               
-         case (VAR_PDJ):
-                var24_pdj(&f, weight); break;
-         case (VAR_FAN2):
-                var25_fan2(&f, weight); break;
-         case (VAR_RINGS2): 
-                var26_rings2(&f, weight); break;              
-         case (VAR_EYEFISH): 
-                var27_eyefish(&f, weight); break;             
-         case (VAR_BUBBLE):
-                var28_bubble(&f, weight); break;
-         case (VAR_CYLINDER):
-                var29_cylinder(&f, weight); break;
-         case (VAR_PERSPECTIVE):
-                var30_perspective(&f, weight); break;
-         case (VAR_NOISE):
-                var31_noise(&f, weight); break;
-         case (VAR_JULIAN): 
-                var32_juliaN_generic(&f, weight); break;            
-         case (VAR_JULIASCOPE):
-                var33_juliaScope_generic(&f, weight);break;
-         case (VAR_BLUR):
-                var34_blur(&f, weight); break;
-         case (VAR_GAUSSIAN_BLUR):
-                var35_gaussian(&f, weight); break;
-         case (VAR_RADIAL_BLUR):
-                var36_radial_blur(&f, weight); break;
-         case (VAR_PIE):
-                var37_pie(&f, weight); break;
-         case (VAR_NGON):
-                var38_ngon(&f, weight); break;          
-         case (VAR_CURL):
-                var39_curl(&f, weight); break;
-         case (VAR_RECTANGLES):
-                var40_rectangles(&f, weight); break;
-         case (VAR_ARCH):
-                var41_arch(&f, weight); break;
-         case (VAR_TANGENT):
-                var42_tangent(&f, weight); break;
-         case (VAR_SQUARE):
-                var43_square(&f, weight); break;
-         case (VAR_RAYS):
-                var44_rays(&f, weight); break;
-         case (VAR_BLADE): 
-                var45_blade(&f, weight); break;              
-         case (VAR_SECANT2): 
-                var46_secant2(&f, weight); break;               
-         case (VAR_TWINTRIAN): 
-                var47_twintrian(&f, weight); break;               
-         case (VAR_CROSS):
-                var48_cross(&f, weight); break;
-         case (VAR_DISC2):
-                var49_disc2(&f, weight); break;            
-         case (VAR_SUPER_SHAPE):
-                var50_supershape(&f, weight); break;
-         case (VAR_FLOWER):
-                var51_flower(&f, weight); break;            
-         case (VAR_CONIC):
-                var52_conic(&f, weight); break;
-         case (VAR_PARABOLA): 
-                var53_parabola(&f, weight); break;              
-         case (VAR_BENT2): 
-                var54_bent2(&f, weight); break;              
-         case (VAR_BIPOLAR): 
-                var55_bipolar(&f, weight); break;              
-         case (VAR_BOARDERS): 
-                var56_boarders(&f, weight); break;              
-         case (VAR_BUTTERFLY): 
-                var57_butterfly(&f, weight); break;              
-         case (VAR_CELL): 
-                var58_cell(&f, weight); break;              
-         case (VAR_CPOW): 
-                var59_cpow(&f, weight); break;              
-         case (VAR_CURVE): 
-                var60_curve(&f, weight); break;              
-         case (VAR_EDISC): 
-                var61_edisc(&f, weight); break;              
-         case (VAR_ELLIPTIC): 
-                var62_elliptic(&f, weight); break;              
-         case (VAR_ESCHER): 
-                var63_escher(&f, weight); break;              
-         case (VAR_FOCI): 
-                var64_foci(&f, weight); break;              
-         case (VAR_LAZYSUSAN): 
-                var65_lazysusan(&f, weight); break;              
-         case (VAR_LOONIE): 
-                var66_loonie(&f, weight); break;              
-         case (VAR_MODULUS): 
-                var68_modulus(&f, weight); break;              
-         case (VAR_OSCILLOSCOPE): 
-                var69_oscope(&f, weight); break;              
-         case (VAR_POLAR2): 
-                var70_polar2(&f, weight); break;              
-         case (VAR_POPCORN2): 
-                var71_popcorn2(&f, weight); break;              
-         case (VAR_SCRY): 
-                var72_scry(&f, weight); break;              
-         case (VAR_SEPARATION): 
-                var73_separation(&f, weight); break;              
-         case (VAR_SPLIT):
-                var74_split(&f, weight); break;
-         case (VAR_SPLITS):
-                var75_splits(&f, weight); break;
-         case (VAR_STRIPES):
-                var76_stripes(&f, weight); break;
-         case (VAR_WEDGE):
-                var77_wedge(&f, weight); break;
-         case (VAR_WEDGE_JULIA):
-                var78_wedge_julia(&f, weight); break;
-         case (VAR_WEDGE_SPH):
-                var79_wedge_sph(&f, weight); break;
-         case (VAR_WHORL):
-                var80_whorl(&f, weight); break;
-         case (VAR_WAVES2):
-                var81_waves2(&f, weight); break;
-         case (VAR_EXP):
-                var82_exp(&f, weight); break;
-         case (VAR_LOG):
-                var83_log(&f, weight); break;
-         case (VAR_SIN):
-                var84_sin(&f, weight); break;
-         case (VAR_COS):
-                var85_cos(&f, weight); break;
-         case (VAR_TAN):
-                var86_tan(&f, weight); break;
-         case (VAR_SEC):
-                var87_sec(&f, weight); break;
-         case (VAR_CSC):
-                var88_csc(&f, weight); break;
-         case (VAR_COT):
-                var89_cot(&f, weight); break;
-         case (VAR_SINH):
-                var90_sinh(&f, weight); break;
-         case (VAR_COSH):
-                var91_cosh(&f, weight); break;
-         case (VAR_TANH):
-                var92_tanh(&f, weight); break;
-         case (VAR_SECH):
-                var93_sech(&f, weight); break;
-         case (VAR_CSCH):
-                var94_csch(&f, weight); break;
-         case (VAR_COTH):
-                var95_coth(&f, weight); break;
-         case (VAR_AUGER):
-                var96_auger(&f, weight); break;
-         case (VAR_FLUX):
-                var97_flux(&f, weight); break;
-         case (VAR_MOBIUS):
-                var98_mobius(&f, weight); break;
-      }
-
+      varFuncPtr varFunc = (varFuncPtr)(cp->xform[fn].varFunc[var_n]);
+      varFunc(&f, weight);
    }
+
    /* apply the post transform */
    if (cp->xform[fn].has_post) {
       q[0] = cp->xform[fn].post[0][0] * f.p0 + cp->xform[fn].post[1][0] * f.p1 + cp->xform[fn].post[2][0];

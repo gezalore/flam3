@@ -436,8 +436,8 @@ typedef struct xform {
 
    int num_active_vars;
    double active_var_weights[flam3_nvariations];
-   int varFunc[flam3_nvariations];
-   
+   void* varFunc[flam3_nvariations];
+
    int motion_freq;
    int motion_func;
    
