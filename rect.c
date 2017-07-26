@@ -405,7 +405,11 @@ static void iter_thread(void *fth) {
       #endif
 
       /* Add the badcount to the counter */
-      ficp->badvals += badcount;
+      #if HAVE_GCC_64BIT_ATOMIC_OPS
+        double_atomic_add(&ficp->badvals, badcount);
+      #else
+        ficp->badvals += badcount;
+      #endif
 
       /* Put them in the bucket accumulator */
       for (j = 0; j < sub_batch_size*4; j+=4) {
