@@ -413,7 +413,7 @@ static void iter_thread(void *fth) {
 
       /* Put them in the bucket accumulator */
       for (j = 0; j < sub_batch_size*4; j+=4) {
-         double p0, p1, p00, p11;
+         double p0, p1;
          double dbl_index0,dbl_frac;
          double interpcolor[4];
          int ci, color_index0;
@@ -421,8 +421,8 @@ static void iter_thread(void *fth) {
          bucket *b;
 
          if (fthp->cp.rotate != 0.0) {
-            p00 = p[0] - fthp->cp.rot_center[0];
-            p11 = p[1] - fthp->cp.rot_center[1];
+            const double p00 = p[0] - fthp->cp.rot_center[0];
+            const double p11 = p[1] - fthp->cp.rot_center[1];
             p0 = p00 * ficp->rot[0][0] + p11 * ficp->rot[0][1] + fthp->cp.rot_center[0];
             p1 = p00 * ficp->rot[1][0] + p11 * ficp->rot[1][1] + fthp->cp.rot_center[1];
          } else {
@@ -434,14 +434,12 @@ static void iter_thread(void *fth) {
            continue;
          }
 
-         double logvis=1.0;
+         const double logvis = p[3];
          bucket *buckets = (bucket *)(fthp->buckets);
 
          /* Skip if invisible */
-         if (p[3]==0)
+         if (logvis==0)
             continue;
-         else
-            logvis = p[3];
 
          b = buckets + (int)(ficp->ws0 * p0 - ficp->wb0s0) +
              ficp->width * (int)(ficp->hs1 * p1 - ficp->hb1s1);
