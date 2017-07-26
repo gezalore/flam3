@@ -433,7 +433,7 @@ static void iter_thread(void *fth) {
          if (p0 >= ficp->bounds[0] && p1 >= ficp->bounds[1] && p0 <= ficp->bounds[2] && p1 <= ficp->bounds[3]) {
 
             double logvis=1.0;
-            bucket *buckets = (bucket *)(ficp->buckets);
+            bucket *buckets = (bucket *)(fthp->buckets);
 
             /* Skip if invisible */
             if (p[3]==0)
@@ -690,7 +690,7 @@ static int render_rectangle(flam3_frame *spec, void *out,
    fic.width  = oversample * image_width  + 2 * gutter_width;
 
    nbuckets = (long)fic.width * (long)fic.height;
-   memory_rqd = (sizeof(bucket) * nbuckets + sizeof(abucket) * nbuckets +
+   memory_rqd = (sizeof(bucket) * nbuckets * spec->nthreads + sizeof(abucket) * nbuckets +
                  4 * sizeof(double) * (size_t)(spec->sub_batch_size) * spec->nthreads);
    last_block = (char *) malloc(memory_rqd);
    if (NULL == last_block) {
@@ -701,8 +701,8 @@ static int render_rectangle(flam3_frame *spec, void *out,
 
    /* Just free buckets at the end */   
    buckets = (bucket *) last_block;
-   accumulate = (abucket *) (last_block + sizeof(bucket) * nbuckets);
-   points = (double *)  (last_block + (sizeof(bucket) + sizeof(abucket)) * nbuckets);
+   accumulate = (abucket *) (last_block + sizeof(bucket) * spec->nthreads * nbuckets);
+   points = (double *)  (last_block + (sizeof(bucket) * spec->nthreads + sizeof(abucket)) * nbuckets);
 
    if (verbose) {
       fprintf(stderr, "chaos: ");
@@ -866,6 +866,8 @@ static int render_rectangle(flam3_frame *spec, void *out,
             for (rk = 0; rk < RANDSIZ; rk++)
                fth[thi].rc.randrsl[rk] = irand(&spec->rc);
 
+            fth[thi].buckets = ((void*)buckets) + sizeof(bucket) * nbuckets * thi;
+
             irandinit(&(fth[thi].rc),1);
 
             if (0==thi) {
@@ -932,6 +934,18 @@ static int render_rectangle(flam3_frame *spec, void *out,
          background[2] += cp.background[2];
          vib_gam_n++;
 
+      }
+
+      // Sum thread buckets
+      for (thi = 1; thi < spec->nthreads; thi++) {
+        const bucket *tb = (bucket*)fth[thi].buckets;
+        for (int i = 0 ; i < nbuckets ; i++) {
+          buckets[i][0] += tb[i][0];
+          buckets[i][1] += tb[i][1];
+          buckets[i][2] += tb[i][2];
+          buckets[i][3] += tb[i][3];
+          buckets[i][4] += tb[i][4];
+        }
       }
 
       k1 =(cp.contrast * cp.brightness *

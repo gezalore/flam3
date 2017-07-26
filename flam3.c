@@ -3666,60 +3666,6 @@ double_atomic_add(double *dest, double delta)
 }
 #endif /* HAVE_GCC_64BIT_ATOMIC_OPS */
 
-#ifdef HAVE_GCC_ATOMIC_OPS
-static inline void
-float_atomic_add(float *dest, float delta)
-{
-   uint32_t *int_ptr = (uint32_t *)dest;
-   union {
-      float fltval;
-      uint32_t intval;
-   } old_val, new_val;
-   int success;
-
-   do {
-      old_val.fltval = *dest;
-      new_val.fltval = old_val.fltval + delta;
-      success = __sync_bool_compare_and_swap(
-         int_ptr, old_val.intval, new_val.intval);
-   } while (!success);
-}
-
-static inline void
-uint_atomic_add(unsigned int *dest, unsigned int delta)
-{
-   unsigned int old_val, new_val;
-   int success;
-
-   do {
-      old_val = *dest;
-      if (UINT_MAX - old_val > delta)
-         new_val = old_val + delta;
-      else
-         new_val = UINT_MAX;
-      success = __sync_bool_compare_and_swap(
-         dest, old_val, new_val);
-   } while (!success);
-}
-
-static inline void
-ushort_atomic_add(unsigned short *dest, unsigned short delta)
-{
-   unsigned short old_val, new_val;
-   int success;
-
-   do {
-      old_val = *dest;
-      if (USHRT_MAX - old_val > delta)
-         new_val = old_val + delta;
-      else
-         new_val = USHRT_MAX;
-      success = __sync_bool_compare_and_swap(
-         dest, old_val, new_val);
-   } while (!success);
-}
-#endif /* HAVE_GCC_ATOMIC_OPS */
-
 /* 64-bit datatypes */
 #define bucket bucket_double
 #define abucket abucket_double
@@ -3744,12 +3690,10 @@ ushort_atomic_add(unsigned short *dest, unsigned short delta)
 #ifdef HAVE_GCC_64BIT_ATOMIC_OPS
    /* multi-threaded */
    #undef USE_LOCKS
-   #undef bump_no_overflow
    #undef render_rectangle
    #undef iter_thread
    #undef de_thread_helper
    #undef de_thread
-   #define bump_no_overflow(dest, delta)  double_atomic_add(&dest, delta)
    #define render_rectangle render_rectangle_double_mt
    #define iter_thread iter_thread_double_mt
    #define de_thread_helper de_thread_helper_64_mt
@@ -3796,12 +3740,10 @@ ushort_atomic_add(unsigned short *dest, unsigned short delta)
 #ifdef HAVE_GCC_ATOMIC_OPS
    /* multi-threaded */
    #undef USE_LOCKS
-   #undef bump_no_overflow
    #undef render_rectangle
    #undef iter_thread
    #undef de_thread_helper
    #undef de_thread
-   #define bump_no_overflow(dest, delta)  uint_atomic_add(&dest, delta)
    #define render_rectangle render_rectangle_int_mt
    #define iter_thread iter_thread_int_mt
    #define de_thread_helper de_thread_helper_32_mt
@@ -3846,12 +3788,10 @@ ushort_atomic_add(unsigned short *dest, unsigned short delta)
 #ifdef HAVE_GCC_ATOMIC_OPS
    /* multi-threaded */
    #undef USE_LOCKS
-   #undef bump_no_overflow
    #undef render_rectangle
    #undef iter_thread
    #undef de_thread_helper
    #undef de_thread
-   #define bump_no_overflow(dest, delta)  uint_atomic_add(&dest, delta)
    #define render_rectangle render_rectangle_float_mt
    #define iter_thread iter_thread_float_mt
    #define de_thread_helper de_thread_helper_33_mt
