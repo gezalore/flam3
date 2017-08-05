@@ -441,6 +441,8 @@ static void iter_thread(void *fth) {
          b = buckets + (int)(ficp->ws0 * p0 - ficp->wb0s0) +
              ficp->width * (int)(ficp->hs1 * p1 - ficp->hb1s1);
 
+         __builtin_prefetch(b);
+
          const double dbl_index0 = p[2] * cmap_size;
          int color_index0 = (int) (dbl_index0);
 
