@@ -440,12 +440,10 @@ static void iter_thread(void *fth) {
 
          const int idx = (int)(ficp->ws0 * p0 - ficp->wb0s0) + ficp->width * (int)(ficp->hs1 * p1 - ficp->hb1s1);
 
-         if (p0 >= ficp->bounds[0] && p1 >= ficp->bounds[1] && p0 <= ficp->bounds[2] && p1 <= ficp->bounds[3]) {
-           iter_storage[i][0] = (double)idx;
-           iter_storage[i][2] = p[2];
-           iter_storage[i][3] = p[3];
-           i++;
-         }
+         iter_storage[i][0] = (double)idx;
+         iter_storage[i][2] = p[2];
+         iter_storage[i][3] = p[3];
+         i += p0 >= ficp->bounds[0] && p1 >= ficp->bounds[1] && p0 <= ficp->bounds[2] && p1 <= ficp->bounds[3];
       }
 
       /* Put them in the bucket accumulator */
