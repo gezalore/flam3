@@ -411,24 +411,21 @@ static void iter_thread(void *fth) {
         ficp->badvals += badcount;
       #endif
 
+      /* Pre-compute rotation */
+      const double R00 = fthp->cp.rotate != 0.0 ? ficp->rot[0][0] : 1.0;
+      const double R01 = fthp->cp.rotate != 0.0 ? ficp->rot[0][1] : 0.0;
+      const double R10 = fthp->cp.rotate != 0.0 ? ficp->rot[1][0] : 0.0;
+      const double R11 = fthp->cp.rotate != 0.0 ? ficp->rot[1][1] : 1.0;
+
       /* Put them in the bucket accumulator */
       for (j = 0; j < sub_batch_size*4; j+=4) {
-         double p0, p1;
-         double dbl_index0,dbl_frac;
-         double interpcolor[4];
-         int ci, color_index0;
          double *p = &(fthp->iter_storage[j]);
          bucket *b;
 
-         if (fthp->cp.rotate != 0.0) {
-            const double p00 = p[0] - fthp->cp.rot_center[0];
-            const double p11 = p[1] - fthp->cp.rot_center[1];
-            p0 = p00 * ficp->rot[0][0] + p11 * ficp->rot[0][1] + fthp->cp.rot_center[0];
-            p1 = p00 * ficp->rot[1][0] + p11 * ficp->rot[1][1] + fthp->cp.rot_center[1];
-         } else {
-            p0 = p[0];
-            p1 = p[1];
-         }
+         const double p00 = p[0] - fthp->cp.rot_center[0];
+         const double p11 = p[1] - fthp->cp.rot_center[1];
+         const double p0 = p00 * R00 + p11 * R01 + fthp->cp.rot_center[0];
+         const double p1 = p00 * R10 + p11 * R11 + fthp->cp.rot_center[1];
 
          if (p0 < ficp->bounds[0] || p1 < ficp->bounds[1] || p0 > ficp->bounds[2] || p1 > ficp->bounds[3]) {
            continue;
@@ -444,10 +441,13 @@ static void iter_thread(void *fth) {
          b = buckets + (int)(ficp->ws0 * p0 - ficp->wb0s0) +
              ficp->width * (int)(ficp->hs1 * p1 - ficp->hb1s1);
 
-         dbl_index0 = p[2] * cmap_size;
-         color_index0 = (int) (dbl_index0);
+         const double dbl_index0 = p[2] * cmap_size;
+         int color_index0 = (int) (dbl_index0);
+
+         double interpcolor[4];
 
          if (flam3_palette_mode_linear == fthp->cp.palette_mode) {
+            double dbl_frac;
             if (color_index0 < 0) {
                color_index0 = 0;
                dbl_frac = 0;
@@ -459,7 +459,7 @@ static void iter_thread(void *fth) {
                dbl_frac = dbl_index0 - (double)color_index0;
             }
 
-            for (ci=0;ci<4;ci++) {
+            for (int ci=0;ci<4;ci++) {
                interpcolor[ci] = ficp->dmap[color_index0].color[ci] * (1.0-dbl_frac) +
                                  ficp->dmap[color_index0+1].color[ci] * dbl_frac;
             }
@@ -472,25 +472,17 @@ static void iter_thread(void *fth) {
                color_index0 = cmap_size_m1;
             }
 
-            for (ci=0;ci<4;ci++)
+            for (int ci=0;ci<4;ci++)
                interpcolor[ci] = ficp->dmap[color_index0].color[ci];
          }
 
-         if (p[3]==1.0) {
-            bump_no_overflow(b[0][0], interpcolor[0]);
-            bump_no_overflow(b[0][1], interpcolor[1]);
-            bump_no_overflow(b[0][2], interpcolor[2]);
-            bump_no_overflow(b[0][3], interpcolor[3]);
-            bump_no_overflow(b[0][4], 255.0);
-         } else {
-            bump_no_overflow(b[0][0], logvis*interpcolor[0]);
-            bump_no_overflow(b[0][1], logvis*interpcolor[1]);
-            bump_no_overflow(b[0][2], logvis*interpcolor[2]);
-            bump_no_overflow(b[0][3], logvis*interpcolor[3]);
-            bump_no_overflow(b[0][4], logvis*255.0);
-         }
+         bump_no_overflow(b[0][0], logvis*interpcolor[0]);
+         bump_no_overflow(b[0][1], logvis*interpcolor[1]);
+         bump_no_overflow(b[0][2], logvis*interpcolor[2]);
+         bump_no_overflow(b[0][3], logvis*interpcolor[3]);
+         bump_no_overflow(b[0][4], logvis*255.0);
       }
-      
+
       #if defined(HAVE_LIBPTHREAD) && defined(USE_LOCKS)
         /* Release mutex */
         pthread_mutex_unlock(&ficp->bucket_mutex);
