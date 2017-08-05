@@ -449,24 +449,26 @@ static void iter_thread(void *fth) {
 
       /* Put them in the bucket accumulator */
 #define UNROLL 32
-      bucket *pb[UNROLL];
+      bucket *pb[256];
+      uint8_t p = 0;
+      uint8_t q = 0;
 
       for (j = 0; j < UNROLL ; j++) {
           const double *const ppf = iter_storage[j];
           const int idxpf         = (int) ppf[0];
           bucket *const bpf       = buckets + idxpf;
           __builtin_prefetch(bpf);
-          pb[j % UNROLL] = bpf;
+          pb[p++] = bpf;
       }
 
       for (j = 0; j < i - UNROLL; j+=1) {
-         bucket *const b         = pb[j % UNROLL];
+         bucket *const b         = pb[q++];
 
          const double *const ppf = iter_storage[j + UNROLL];
          const int idxpf         = (int) ppf[0];
          bucket *const bpf       = buckets + idxpf;
          __builtin_prefetch(bpf);
-         pb[j % UNROLL] = bpf;
+         pb[p++] = bpf;
 
          const double *const p   = iter_storage[j];
          const double dbl_index0 = p[2] * 256;
@@ -488,7 +490,7 @@ static void iter_thread(void *fth) {
       }
 
       for (; j < i; j+=1) {
-         bucket *const b         = pb[j % UNROLL];
+         bucket *const b         = pb[q++];
 
          const double *const p   = iter_storage[j];
          const double dbl_index0 = p[2] * 256;
