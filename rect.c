@@ -414,7 +414,11 @@ static void iter_thread(void *fth) {
         ficp->badvals += badcount;
       #endif
 
-      /* Pre-compute rotation */
+      v4d *const iter_storage = (v4d*)fthp->iter_storage;
+
+      int i = 0;
+
+      /* Pre-compute rotation and bound check constants */
       const double R00 = fthp->cp.rotate != 0.0 ? ficp->rot[0][0] : 1.0;
       const double R01 = fthp->cp.rotate != 0.0 ? ficp->rot[0][1] : 0.0;
       const double R10 = fthp->cp.rotate != 0.0 ? ficp->rot[1][0] : 0.0;
@@ -424,12 +428,20 @@ static void iter_thread(void *fth) {
       const double C0 = -R00*E - R01*F + E;
       const double C1 = -R10*E - R11*F + F;
 
-      const __m128d v_R0 = _mm_set_pd(R01, R00);
-      const __m128d v_R1 = _mm_set_pd(R11, R10);
+      const double p0m = ficp->ws0;
+      const double p0s = ficp->wb0s0 - p0m * C0;
+      const double p1m = ficp->hs1;
+      const double p1s = ficp->hb1s1 - p1m * C1;
 
-      v4d *const iter_storage = (v4d*)fthp->iter_storage;
+      const __m128d v_R0 = _mm_set_pd(p0m * R01, p0m * R00);
+      const __m128d v_R1 = _mm_set_pd(p1m * R11, p1m * R10);
 
-      int i = 0;
+      const double b0 = p0m * (ficp->bounds[0] - C0);
+      const double b1 = p1m * (ficp->bounds[1] - C1);
+      const double b2 = p0m * (ficp->bounds[2] - C0);
+      const double b3 = p1m * (ficp->bounds[3] - C1);
+
+      const int width = ficp->width;
 
       /* Rotate points, compute boundaries */
       for (j = 0; j < sub_batch_size; j+=1) {
@@ -439,15 +451,15 @@ static void iter_thread(void *fth) {
          const __m128d v_p0 = _mm_dp_pd(v_p10, v_R0, 0x31);
          const __m128d v_p1 = _mm_dp_pd(v_p10, v_R1, 0x31);
 
-         const double p0 =  _mm_cvtsd_f64(v_p0) + C0;
-         const double p1 =  _mm_cvtsd_f64(v_p1) + C1;
+         const double p0 =  _mm_cvtsd_f64(v_p0);
+         const double p1 =  _mm_cvtsd_f64(v_p1);
 
-         const int idx = (int)(ficp->ws0 * p0 - ficp->wb0s0) + ficp->width * (int)(ficp->hs1 * p1 - ficp->hb1s1);
+         const int idx = (int)(p0 - p0s) + width * (int)(p1 - p1s);
 
          iter_storage[i][0] = (double)idx;
          iter_storage[i][2] = p[2];
          iter_storage[i][3] = p[3];
-         i += p0 >= ficp->bounds[0] && p1 >= ficp->bounds[1] && p0 <= ficp->bounds[2] && p1 <= ficp->bounds[3];
+         i += p0 >= b0 && p1 >= b1 && p0 <= b2 && p1 <= b3;
       }
 
       bucket *const buckets = (bucket *)fthp->buckets;
