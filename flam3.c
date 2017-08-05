@@ -3635,7 +3635,7 @@ int flam3_estimate_bounding_box(flam3_genome *cp, double eps, int nsamples,
 }
 
 
-typedef double bucket_double[5];
+typedef double bucket_double[4];
 typedef double abucket_double[4];
 typedef unsigned int bucket_int[5];
 typedef unsigned int abucket_int[4];

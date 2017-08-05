@@ -39,8 +39,8 @@
 
 
 typedef struct {
-
    bucket *b;
+   double *l;
    abucket *accumulate;
    int width, height, oversample;
    flam3_de_helper *de;
@@ -84,20 +84,22 @@ static void de_thread(void *dth) {
          int f_select_int,f_coef_idx;
          int arr_filt_width;
          bucket *b;
+         double *l;
          double c[4],ls;
                
          b = dthp->b + i + j*wid;
+         l = dthp->l + i + j*wid;
          
          /* Don't do anything if there's no hits here */
-         if (b[0][4] == 0 || b[0][3] == 0)
+         if (l[0] == 0 || b[0][3] == 0)
             continue;
 
          /* Count density in ssxss area   */
          /* Scale if OS>1 for equal iters */
          for (ii=-ss; ii<=ss; ii++) {
             for (jj=-ss; jj<=ss; jj++) {
-               b = dthp->b + (i + ii) + (j + jj)*wid;
-               f_select += b[0][4]/255.0;
+               l = dthp->l + (i + ii) + (j + jj)*wid;
+               f_select += l[0]/255.0;
             }
          }
                
@@ -423,6 +425,9 @@ static void iter_thread(void *fth) {
       const double C0 = -R00*E - R01*F + E;
       const double C1 = -R10*E - R11*F + F;
 
+      bucket *const buckets = (bucket *)(fthp->buckets);
+      double *const logviss = (double *)(fthp->logviss);
+
       /* Put them in the bucket accumulator */
       for (j = 0; j < sub_batch_size*4; j+=4) {
          double *const p = &(fthp->iter_storage[j]);
@@ -435,16 +440,19 @@ static void iter_thread(void *fth) {
          }
 
          const double logvis = p[3];
-         bucket *const buckets = (bucket *)(fthp->buckets);
 
          /* Skip if invisible */
          if (logvis==0)
             continue;
 
-         bucket *const b = buckets + (int)(ficp->ws0 * p0 - ficp->wb0s0) +
-             ficp->width * (int)(ficp->hs1 * p1 - ficp->hb1s1);
+         const int idx = (int)(ficp->ws0 * p0 - ficp->wb0s0) +
+                 ficp->width * (int)(ficp->hs1 * p1 - ficp->hb1s1);
+
+         bucket *const b = buckets + idx;
+         double *const l = logviss + idx;
 
          __builtin_prefetch(b);
+         __builtin_prefetch(l);
 
          const double dbl_index0 = p[2] * cmap_size;
          int color_index0 = (int) (dbl_index0);
@@ -462,7 +470,7 @@ static void iter_thread(void *fth) {
          b[0][2] += logvis*interpcolor[2];
          b[0][3] += logvis*interpcolor[3];
 
-         b[0][4] += logvis;
+         l[0] += logvis;
       }
 
       #if defined(HAVE_LIBPTHREAD) && defined(USE_LOCKS)
@@ -478,12 +486,8 @@ static void iter_thread(void *fth) {
 
 static int render_rectangle(flam3_frame *spec, void *out,
 			     int field, int nchan, int transp, stat_struct *stats) {
-   long nbuckets;
    int i, j, k, batch_num, temporal_sample_num;
    double nsamples, batch_size;
-   bucket  *buckets;
-   abucket *accumulate;
-   double *points;
    double *filter, *temporal_filter, *temporal_deltas, *batch_filter;
    double ppux=0, ppuy=0;
    int image_width, image_height;    /* size of the image to produce */
@@ -635,20 +639,15 @@ static int render_rectangle(flam3_frame *spec, void *out,
    fic.height = oversample * image_height + 2 * gutter_width;
    fic.width  = oversample * image_width  + 2 * gutter_width;
 
-   nbuckets = (long)fic.width * (long)fic.height;
-   memory_rqd = (sizeof(bucket) * nbuckets * spec->nthreads + sizeof(abucket) * nbuckets +
-                 4 * sizeof(double) * (size_t)(spec->sub_batch_size) * spec->nthreads);
-   last_block = (char *) malloc(memory_rqd);
-   if (NULL == last_block) {
-      fprintf(stderr, "render_rectangle: cannot malloc %g bytes.\n", (double)memory_rqd);
-      fprintf(stderr, "render_rectangle: w=%d h=%d nb=%ld.\n", fic.width, fic.height, nbuckets);
-      return(1);
-   }
+   const long nbuckets = (long)fic.width * (long)fic.height;
 
-   /* Just free buckets at the end */   
-   buckets = (bucket *) last_block;
-   accumulate = (abucket *) (last_block + sizeof(bucket) * spec->nthreads * nbuckets);
-   points = (double *)  (last_block + (sizeof(bucket) * spec->nthreads + sizeof(abucket)) * nbuckets);
+   bucket *const buckets = (bucket *) malloc(sizeof(bucket) * nbuckets * spec->nthreads);
+   double *const logviss = (double *) malloc(sizeof(double) * nbuckets * spec->nthreads);
+   abucket *const accumulate = (abucket *) malloc(sizeof(abucket) * nbuckets);
+   double *const points = (double *) malloc(4 * sizeof(double) * (size_t)(spec->sub_batch_size) * spec->nthreads);
+   assert(buckets != NULL);
+   assert(accumulate != NULL);
+   assert(points != NULL);
 
    if (verbose) {
       fprintf(stderr, "chaos: ");
@@ -668,7 +667,8 @@ static int render_rectangle(flam3_frame *spec, void *out,
 
       de_time = spec->time + temporal_deltas[batch_num*ntemporal_samples];
 
-      memset((char *) buckets, 0, sizeof(bucket) * nbuckets);
+      memset((char *) buckets, 0, sizeof(bucket) * nbuckets * spec->nthreads);
+      memset((char *) logviss, 0, sizeof(double) * nbuckets * spec->nthreads);
 
       /* interpolate and get a control point                      */
       /* ONLY FOR DENSITY FILTER WIDTH PURPOSES                   */
@@ -813,6 +813,7 @@ static int render_rectangle(flam3_frame *spec, void *out,
                fth[thi].rc.randrsl[rk] = irand(&spec->rc);
 
             fth[thi].buckets = ((void*)buckets) + sizeof(bucket) * nbuckets * thi;
+            fth[thi].logviss = ((void*)logviss) + sizeof(double) * nbuckets * thi;
 
             irandinit(&(fth[thi].rc),1);
 
@@ -885,18 +886,19 @@ static int render_rectangle(flam3_frame *spec, void *out,
       // Sum thread buckets
       for (thi = 1; thi < spec->nthreads; thi++) {
         const bucket *tb = (bucket*)fth[thi].buckets;
+        const double *tl = (double*)fth[thi].logviss;
         for (int i = 0 ; i < nbuckets ; i++) {
           buckets[i][0] += tb[i][0];
           buckets[i][1] += tb[i][1];
           buckets[i][2] += tb[i][2];
           buckets[i][3] += tb[i][3];
-          buckets[i][4] += tb[i][4];
+          logviss[i] += tl[i];
         }
       }
 
-      // Rescale part 5
+      // Rescale logviss
       for (int i = 0 ; i < nbuckets ; i++) {
-        buckets[i][4] *= 255.0;
+         logviss[i] *= 255.0;
       }
 
       k1 =(cp.contrast * cp.brightness *
@@ -955,6 +957,7 @@ static int render_rectangle(flam3_frame *spec, void *out,
          
             /* Set up the contents of the helper structure */
             deth[thi].b = buckets;
+            deth[thi].l = logviss;
             deth[thi].accumulate = accumulate;
             deth[thi].width = fic.width;
             deth[thi].height = fic.height;
@@ -1224,8 +1227,9 @@ static int render_rectangle(flam3_frame *spec, void *out,
    free(batch_filter);
    free(filter);
    free(buckets);
-//   free(accumulate);
-//   free(points);
+   free(logviss);
+   free(accumulate);
+   free(points);
    /* We have to clear the cps in fth first */
    for (thi = 0; thi < spec->nthreads; thi++) {
       clear_cp(&(fth[thi].cp),0);
