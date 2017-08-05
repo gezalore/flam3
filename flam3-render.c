@@ -131,7 +131,7 @@ int main(int argc, char **argv) {
    double qs = argf("qs", 1.0);
    double ss = argf("ss", 1.0);
    double pixel_aspect = argf("pixel_aspect", 1.0);
-   int sub_batch_size = argi("sub_batch_size",10000);
+   int sub_batch_size = argi("sub_batch_size",8192);
    int name_enable = argi("name_enable",0);
    int num_threads = argi("nthreads",0);
    int earlyclip = argi("earlyclip",0);
