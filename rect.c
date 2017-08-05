@@ -250,6 +250,9 @@ static void de_thread(void *dth) {
 
 }
 
+typedef double v4d[4];
+typedef double v8d[8];
+
 static void iter_thread(void *fth) {
    double sub_batch;
    int j;
@@ -423,11 +426,12 @@ static void iter_thread(void *fth) {
 
       bucket *const buckets = (bucket *)fthp->buckets;
 
-      const double (*const dmap)[4] = ficp->dmap;
+      const v4d *const dmap =  ficp->dmap;
+      const v4d *const iter_storage = (v4d*)fthp->iter_storage;
 
       /* Put them in the bucket accumulator */
-      for (j = 0; j < sub_batch_size*4; j+=4) {
-         double *const p = &(fthp->iter_storage[j]);
+      for (j = 0; j < sub_batch_size; j+=1) {
+         const double *const p = iter_storage[j];
 
          const double p0 =  p[0] * R00 + p[1] * R01 + C0;
          const double p1 =  p[0] * R10 + p[1] * R11 + C1;
