@@ -436,10 +436,13 @@ static void iter_thread(void *fth) {
       const __m128d v_R0 = _mm_set_pd(p0m * R01, p0m * R00);
       const __m128d v_R1 = _mm_set_pd(p1m * R11, p1m * R10);
 
-      const double b0 = p0m * (ficp->bounds[0] - C0);
-      const double b1 = p1m * (ficp->bounds[1] - C1);
-      const double b2 = p0m * (ficp->bounds[2] - C0);
-      const double b3 = p1m * (ficp->bounds[3] - C1);
+      const double b0l = p0m * (ficp->bounds[0] - C0);
+      const double b0h= p0m * (ficp->bounds[2] - C0);
+      const double b1l = p1m * (ficp->bounds[1] - C1);
+      const double b1h = p1m * (ficp->bounds[3] - C1);
+
+      const __m128d v_bl = _mm_set_pd(b1l, b0l);
+      const __m128d v_bh = _mm_set_pd(b1h, b0h);
 
       const int width = ficp->width;
 
@@ -448,18 +451,24 @@ static void iter_thread(void *fth) {
          const double *const p = iter_storage[j];
          const __m128d v_p10 = _mm_load_pd(p);
 
-         const __m128d v_p0 = _mm_dp_pd(v_p10, v_R0, 0x31);
-         const __m128d v_p1 = _mm_dp_pd(v_p10, v_R1, 0x31);
+         const __m128d v_pp0 = _mm_dp_pd(v_p10, v_R0, 0x33);
+         const __m128d v_pp1 = _mm_dp_pd(v_p10, v_R1, 0x33);
 
-         const double p0 =  _mm_cvtsd_f64(v_p0);
-         const double p1 =  _mm_cvtsd_f64(v_p1);
+         const double pp0 =  _mm_cvtsd_f64(v_pp0);
+         const double pp1 =  _mm_cvtsd_f64(v_pp1);
 
-         const int idx = (int)(p0 - p0s) + width * (int)(p1 - p1s);
+         const int idx = (int)(pp0 - p0s) + width * (int)(pp1 - p1s);
 
          iter_storage[i][0] = (double)idx;
          iter_storage[i][2] = p[2];
          iter_storage[i][3] = p[3];
-         i += p0 >= b0 && p1 >= b1 && p0 <= b2 && p1 <= b3;
+
+         const __m128d v_pp10 = _mm_blend_pd(v_pp0, v_pp1, 0x2);
+
+         const __m128i v_cl = (__m128i)_mm_cmplt_pd(v_pp10, v_bl);
+         const __m128i v_ch = (__m128i)_mm_cmpgt_pd(v_pp10, v_bh);
+         const __m128i v_c = _mm_or_si128(v_cl, v_ch);
+         i += _mm_test_all_zeros(v_c, v_c);
       }
 
       bucket *const buckets = (bucket *)fthp->buckets;
