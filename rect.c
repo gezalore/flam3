@@ -433,8 +433,7 @@ static void iter_thread(void *fth) {
       const double p1m = ficp->hs1;
       const double p1s = ficp->hb1s1 - p1m * C1;
 
-      const __m128d v_R0 = _mm_set_pd(p0m * R01, p0m * R00);
-      const __m128d v_R1 = _mm_set_pd(p1m * R11, p1m * R10);
+      const __m128d v_ps = _mm_set_pd(p1s, p0s);
 
       const double b0l = p0m * (ficp->bounds[0] - C0);
       const double b0h= p0m * (ficp->bounds[2] - C0);
@@ -445,29 +444,34 @@ static void iter_thread(void *fth) {
       const __m128d v_bh = _mm_set_pd(b1h, b0h);
 
       const int width = ficp->width;
+      const __m128i v_wm = _mm_set_epi32(0, 0, width, 1);
+
+      const __m128d v_R0 = _mm_set_pd(p0m * R01, p0m * R00);
+      const __m128d v_R1 = _mm_set_pd(p1m * R11, p1m * R10);
 
       /* Rotate points, compute boundaries */
       for (j = 0; j < sub_batch_size; j+=1) {
          const double *const p = iter_storage[j];
          const __m128d v_p10 = _mm_load_pd(p);
 
-         const __m128d v_pp0 = _mm_dp_pd(v_p10, v_R0, 0x33);
-         const __m128d v_pp1 = _mm_dp_pd(v_p10, v_R1, 0x33);
+         const __m128d v_pp0 = _mm_dp_pd(v_p10, v_R0, 0x31);
+         const __m128d v_pp1 = _mm_dp_pd(v_p10, v_R1, 0x32);
 
-         const double pp0 =  _mm_cvtsd_f64(v_pp0);
-         const double pp1 =  _mm_cvtsd_f64(v_pp1);
+         const __m128d v_pp10 = _mm_or_pd(v_pp0, v_pp1);
 
-         const int idx = (int)(pp0 - p0s) + width * (int)(pp1 - p1s);
-
-         iter_storage[i][0] = (double)idx;
-         iter_storage[i][2] = p[2];
-         iter_storage[i][3] = p[3];
-
-         const __m128d v_pp10 = _mm_blend_pd(v_pp0, v_pp1, 0x2);
+         const __m128d v_pp10d  = _mm_sub_pd(v_pp10, v_ps);
+         const __m128i v_pp10di = _mm_cvtpd_epi32(v_pp10d);
+         const __m128i v_idxt = _mm_mullo_epi32(v_wm, v_pp10di);
+         const __m128i v_idx = _mm_hadd_epi32(v_idxt, v_idxt);
+         const int idx = _mm_cvtsi128_si32(v_idx);
 
          const __m128i v_cl = (__m128i)_mm_cmplt_pd(v_pp10, v_bl);
          const __m128i v_ch = (__m128i)_mm_cmpgt_pd(v_pp10, v_bh);
          const __m128i v_c = _mm_or_si128(v_cl, v_ch);
+
+         iter_storage[i][0] = (double)idx;
+         iter_storage[i][2] = p[2];
+         iter_storage[i][3] = p[3];
          i += _mm_test_all_zeros(v_c, v_c);
       }
 
