@@ -480,7 +480,8 @@ static void iter_thread(void *fth) {
          bump_no_overflow(b[0][1], logvis*interpcolor[1]);
          bump_no_overflow(b[0][2], logvis*interpcolor[2]);
          bump_no_overflow(b[0][3], logvis*interpcolor[3]);
-         bump_no_overflow(b[0][4], logvis*255.0);
+
+         bump_no_overflow(b[0][4], logvis);
       }
 
       #if defined(HAVE_LIBPTHREAD) && defined(USE_LOCKS)
@@ -910,6 +911,11 @@ static int render_rectangle(flam3_frame *spec, void *out,
           buckets[i][3] += tb[i][3];
           buckets[i][4] += tb[i][4];
         }
+      }
+
+      // Rescale part 5
+      for (int i = 0 ; i < nbuckets ; i++) {
+        buckets[i][4] *= 255.0;
       }
 
       k1 =(cp.contrast * cp.brightness *
