@@ -427,27 +427,39 @@ static void iter_thread(void *fth) {
       bucket *const buckets = (bucket *)fthp->buckets;
 
       const v4d *const dmap =  ficp->dmap;
-      const v4d *const iter_storage = (v4d*)fthp->iter_storage;
+      v4d *const iter_storage = (v4d*)fthp->iter_storage;
 
-      /* Put them in the bucket accumulator */
+      int i = 0;
+
+      /* Rotate points, compute boundaries */
       for (j = 0; j < sub_batch_size; j+=1) {
          const double *const p = iter_storage[j];
 
          const double p0 =  p[0] * R00 + p[1] * R01 + C0;
          const double p1 =  p[0] * R10 + p[1] * R11 + C1;
 
-         if (p0 < ficp->bounds[0] || p1 < ficp->bounds[1] || p0 > ficp->bounds[2] || p1 > ficp->bounds[3]) {
-           continue;
+         if (p0 >= ficp->bounds[0] && p1 >= ficp->bounds[1] && p0 <= ficp->bounds[2] && p1 <= ficp->bounds[3]) {
+           iter_storage[i][0] = p0;
+           iter_storage[i][1] = p1;
+           iter_storage[i][2] = p[2];
+           iter_storage[i][3] = p[3];
+           i++;
          }
+      }
 
-         const double logvis = p[3];
+      /* Put them in the bucket accumulator */
+      for (j = 0; j < i; j+=1) {
+         const double *const p = iter_storage[j];
 
-         const int idx = (int)(ficp->ws0 * p0 - ficp->wb0s0) +
-                 ficp->width * (int)(ficp->hs1 * p1 - ficp->hb1s1);
+         const double p0 =  p[0];
+         const double p1 =  p[1];
+
+         const int idx = (int)(ficp->ws0 * p0 - ficp->wb0s0) + ficp->width * (int)(ficp->hs1 * p1 - ficp->hb1s1);
 
          bucket *const b = buckets + idx;
-
          __builtin_prefetch(b);
+
+         const double logvis = p[3];
 
          const double dbl_index0 = p[2] * 256;
          int color_index0 = (int) (dbl_index0);
