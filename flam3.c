@@ -3707,103 +3707,103 @@ double_atomic_add(double *dest, double delta)
 #undef de_thread_helper
 #undef de_thread
 
-/* 32-bit datatypes */
-#define bucket bucket_int
-#define abucket abucket_int
-#define abump_no_overflow(dest, delta) do { \
-   if (UINT_MAX - dest > delta) dest += delta; else dest = UINT_MAX; \
-} while (0)
-#define add_c_to_accum(acc,i,ii,j,jj,wid,hgt,c) do { \
-   if ( (j) + (jj) >=0 && (j) + (jj) < (hgt) && (i) + (ii) >=0 && (i) + (ii) < (wid)) { \
-   abucket *a = (acc) + ( (i) + (ii) ) + ( (j) + (jj) ) * (wid); \
-   abump_no_overflow(a[0][0],(c)[0]); \
-   abump_no_overflow(a[0][1],(c)[1]); \
-   abump_no_overflow(a[0][2],(c)[2]); \
-   abump_no_overflow(a[0][3],(c)[3]); \
-   } \
-} while (0)
-/* single-threaded */
-#define USE_LOCKS
-#define bump_no_overflow(dest, delta) do { \
-   if (UINT_MAX - dest > delta) dest += delta; else dest = UINT_MAX; \
-} while (0)
-#define render_rectangle render_rectangle_int
-#define iter_thread iter_thread_int
-#define de_thread_helper de_thread_helper_32
-#define de_thread de_thread_32
-#include "rect.c"
-#ifdef HAVE_GCC_ATOMIC_OPS
-   /* multi-threaded */
-   #undef USE_LOCKS
-   #undef render_rectangle
-   #undef iter_thread
-   #undef de_thread_helper
-   #undef de_thread
-   #define render_rectangle render_rectangle_int_mt
-   #define iter_thread iter_thread_int_mt
-   #define de_thread_helper de_thread_helper_32_mt
-   #define de_thread de_thread_32_mt
-   #include "rect.c"
-#else /* !HAVE_GCC_ATOMIC_OPS */
-   #define render_rectangle_int_mt render_rectangle_int
-#endif /* HAVE_GCC_ATOMIC_OPS */
-#undef iter_thread
-#undef render_rectangle
-#undef add_c_to_accum
-#undef bucket
-#undef abucket
-#undef bump_no_overflow
-#undef abump_no_overflow
-#undef de_thread_helper
-#undef de_thread
-
-/* experimental 32-bit datatypes (called 33) */
-#define bucket bucket_int
-#define abucket abucket_float
-#define abump_no_overflow(dest, delta) do {dest += delta;} while (0)
-#define add_c_to_accum(acc,i,ii,j,jj,wid,hgt,c) do { \
-   if ( (j) + (jj) >=0 && (j) + (jj) < (hgt) && (i) + (ii) >=0 && (i) + (ii) < (wid)) { \
-   abucket *a = (acc) + ( (i) + (ii) ) + ( (j) + (jj) ) * (wid); \
-   abump_no_overflow(a[0][0],(c)[0]); \
-   abump_no_overflow(a[0][1],(c)[1]); \
-   abump_no_overflow(a[0][2],(c)[2]); \
-   abump_no_overflow(a[0][3],(c)[3]); \
-   } \
-} while (0)
-/* single-threaded */
-#define USE_LOCKS
-#define bump_no_overflow(dest, delta) do { \
-   if (UINT_MAX - dest > delta) dest += delta; else dest = UINT_MAX; \
-} while (0)
-#define render_rectangle render_rectangle_float
-#define iter_thread iter_thread_float
-#define de_thread_helper de_thread_helper_33
-#define de_thread de_thread_33
-#include "rect.c"
-#ifdef HAVE_GCC_ATOMIC_OPS
-   /* multi-threaded */
-   #undef USE_LOCKS
-   #undef render_rectangle
-   #undef iter_thread
-   #undef de_thread_helper
-   #undef de_thread
-   #define render_rectangle render_rectangle_float_mt
-   #define iter_thread iter_thread_float_mt
-   #define de_thread_helper de_thread_helper_33_mt
-   #define de_thread de_thread_33_mt
-   #include "rect.c"
-#else /* !HAVE_GCC_ATOMIC_OPS */
-   #define render_rectangle_float_mt render_rectangle_float
-#endif /* HAVE_GCC_ATOMIC_OPS */
-#undef iter_thread
-#undef render_rectangle
-#undef add_c_to_accum
-#undef bucket
-#undef abucket
-#undef bump_no_overflow
-#undef abump_no_overflow
-#undef de_thread_helper
-#undef de_thread
+///* 32-bit datatypes */
+//#define bucket bucket_int
+//#define abucket abucket_int
+//#define abump_no_overflow(dest, delta) do { \
+//   if (UINT_MAX - dest > delta) dest += delta; else dest = UINT_MAX; \
+//} while (0)
+//#define add_c_to_accum(acc,i,ii,j,jj,wid,hgt,c) do { \
+//   if ( (j) + (jj) >=0 && (j) + (jj) < (hgt) && (i) + (ii) >=0 && (i) + (ii) < (wid)) { \
+//   abucket *a = (acc) + ( (i) + (ii) ) + ( (j) + (jj) ) * (wid); \
+//   abump_no_overflow(a[0][0],(c)[0]); \
+//   abump_no_overflow(a[0][1],(c)[1]); \
+//   abump_no_overflow(a[0][2],(c)[2]); \
+//   abump_no_overflow(a[0][3],(c)[3]); \
+//   } \
+//} while (0)
+///* single-threaded */
+//#define USE_LOCKS
+//#define bump_no_overflow(dest, delta) do { \
+//   if (UINT_MAX - dest > delta) dest += delta; else dest = UINT_MAX; \
+//} while (0)
+//#define render_rectangle render_rectangle_int
+//#define iter_thread iter_thread_int
+//#define de_thread_helper de_thread_helper_32
+//#define de_thread de_thread_32
+//#include "rect.c"
+//#ifdef HAVE_GCC_ATOMIC_OPS
+//   /* multi-threaded */
+//   #undef USE_LOCKS
+//   #undef render_rectangle
+//   #undef iter_thread
+//   #undef de_thread_helper
+//   #undef de_thread
+//   #define render_rectangle render_rectangle_int_mt
+//   #define iter_thread iter_thread_int_mt
+//   #define de_thread_helper de_thread_helper_32_mt
+//   #define de_thread de_thread_32_mt
+//   #include "rect.c"
+//#else /* !HAVE_GCC_ATOMIC_OPS */
+//   #define render_rectangle_int_mt render_rectangle_int
+//#endif /* HAVE_GCC_ATOMIC_OPS */
+//#undef iter_thread
+//#undef render_rectangle
+//#undef add_c_to_accum
+//#undef bucket
+//#undef abucket
+//#undef bump_no_overflow
+//#undef abump_no_overflow
+//#undef de_thread_helper
+//#undef de_thread
+//
+///* experimental 32-bit datatypes (called 33) */
+//#define bucket bucket_int
+//#define abucket abucket_float
+//#define abump_no_overflow(dest, delta) do {dest += delta;} while (0)
+//#define add_c_to_accum(acc,i,ii,j,jj,wid,hgt,c) do { \
+//   if ( (j) + (jj) >=0 && (j) + (jj) < (hgt) && (i) + (ii) >=0 && (i) + (ii) < (wid)) { \
+//   abucket *a = (acc) + ( (i) + (ii) ) + ( (j) + (jj) ) * (wid); \
+//   abump_no_overflow(a[0][0],(c)[0]); \
+//   abump_no_overflow(a[0][1],(c)[1]); \
+//   abump_no_overflow(a[0][2],(c)[2]); \
+//   abump_no_overflow(a[0][3],(c)[3]); \
+//   } \
+//} while (0)
+///* single-threaded */
+//#define USE_LOCKS
+//#define bump_no_overflow(dest, delta) do { \
+//   if (UINT_MAX - dest > delta) dest += delta; else dest = UINT_MAX; \
+//} while (0)
+//#define render_rectangle render_rectangle_float
+//#define iter_thread iter_thread_float
+//#define de_thread_helper de_thread_helper_33
+//#define de_thread de_thread_33
+//#include "rect.c"
+//#ifdef HAVE_GCC_ATOMIC_OPS
+//   /* multi-threaded */
+//   #undef USE_LOCKS
+//   #undef render_rectangle
+//   #undef iter_thread
+//   #undef de_thread_helper
+//   #undef de_thread
+//   #define render_rectangle render_rectangle_float_mt
+//   #define iter_thread iter_thread_float_mt
+//   #define de_thread_helper de_thread_helper_33_mt
+//   #define de_thread de_thread_33_mt
+//   #include "rect.c"
+//#else /* !HAVE_GCC_ATOMIC_OPS */
+//   #define render_rectangle_float_mt render_rectangle_float
+//#endif /* HAVE_GCC_ATOMIC_OPS */
+//#undef iter_thread
+//#undef render_rectangle
+//#undef add_c_to_accum
+//#undef bucket
+//#undef abucket
+//#undef bump_no_overflow
+//#undef abump_no_overflow
+//#undef de_thread_helper
+//#undef de_thread
 
 
 double flam3_render_memory_required(flam3_frame *spec)
@@ -3834,12 +3834,12 @@ int flam3_render(flam3_frame *spec, void *out,
   if (spec->nthreads <= 2) {
     /* single-threaded or 2 threads without atomic operations */
     switch (spec->bits) {
-    case 32:
-      retval = render_rectangle_int(spec, out, field, nchan, trans, stats);
-      return(retval);
-    case 33:
-      retval = render_rectangle_float(spec, out, field, nchan, trans, stats);
-      return(retval);
+//    case 32:
+//      retval = render_rectangle_int(spec, out, field, nchan, trans, stats);
+//      return(retval);
+//    case 33:
+//      retval = render_rectangle_float(spec, out, field, nchan, trans, stats);
+//      return(retval);
     case 64:
       retval = render_rectangle_double(spec, out, field, nchan, trans, stats);
       return(retval);
@@ -3850,12 +3850,12 @@ int flam3_render(flam3_frame *spec, void *out,
   } else {
     /* 3+ threads using atomic ops if available */
     switch (spec->bits) {
-    case 32:
-      retval = render_rectangle_int_mt(spec, out, field, nchan, trans, stats);
-      return(retval);
-    case 33:
-      retval = render_rectangle_float_mt(spec, out, field, nchan, trans, stats);
-      return(retval);
+//    case 32:
+//      retval = render_rectangle_int_mt(spec, out, field, nchan, trans, stats);
+//      return(retval);
+//    case 33:
+//      retval = render_rectangle_float_mt(spec, out, field, nchan, trans, stats);
+//      return(retval);
     case 64:
       retval = render_rectangle_double_mt(spec, out, field, nchan, trans, stats);
       return(retval);
