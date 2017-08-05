@@ -119,8 +119,7 @@ typedef struct {
 } flam3_iter_helper;
 
 typedef struct {
-   void *buckets;
-   double *logviss;
+   double (*buckets)[8];
    double *iter_storage; /* Storage for iteration coordinates */
    randctx rc; /* Thread-unique ISAAC seed */
    flam3_genome cp; /* Full copy of genome for use by the thread */
