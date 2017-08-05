@@ -416,16 +416,18 @@ static void iter_thread(void *fth) {
       const double R01 = fthp->cp.rotate != 0.0 ? ficp->rot[0][1] : 0.0;
       const double R10 = fthp->cp.rotate != 0.0 ? ficp->rot[1][0] : 0.0;
       const double R11 = fthp->cp.rotate != 0.0 ? ficp->rot[1][1] : 1.0;
+      const double E = fthp->cp.rot_center[0];
+      const double F = fthp->cp.rot_center[1];
+      const double C0 = -R00*E - R01*F + E;
+      const double C1 = -R10*E - R11*F + F;
 
       /* Put them in the bucket accumulator */
       for (j = 0; j < sub_batch_size*4; j+=4) {
          double *p = &(fthp->iter_storage[j]);
          bucket *b;
 
-         const double p00 = p[0] - fthp->cp.rot_center[0];
-         const double p11 = p[1] - fthp->cp.rot_center[1];
-         const double p0 = p00 * R00 + p11 * R01 + fthp->cp.rot_center[0];
-         const double p1 = p00 * R10 + p11 * R11 + fthp->cp.rot_center[1];
+         const double p0 =  p[0] * R00 + p[1] * R01 + C0;
+         const double p1 =  p[0] * R10 + p[1] * R11 + C1;
 
          if (p0 < ficp->bounds[0] || p1 < ficp->bounds[1] || p0 > ficp->bounds[2] || p1 > ficp->bounds[3]) {
            continue;
