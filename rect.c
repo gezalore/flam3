@@ -263,6 +263,8 @@ static void iter_thread(void *fth) {
 
    double eta = 0.0;
    
+   assert(flam3_palette_mode_linear != fthp->cp.palette_mode);
+
    fuse = (ficp->spec->earlyclip) ? FUSE_28 : FUSE_27;
 
    pauset.tv_sec = 0;
@@ -423,8 +425,7 @@ static void iter_thread(void *fth) {
 
       /* Put them in the bucket accumulator */
       for (j = 0; j < sub_batch_size*4; j+=4) {
-         double *p = &(fthp->iter_storage[j]);
-         bucket *b;
+         double *const p = &(fthp->iter_storage[j]);
 
          const double p0 =  p[0] * R00 + p[1] * R01 + C0;
          const double p1 =  p[0] * R10 + p[1] * R11 + C1;
@@ -434,13 +435,13 @@ static void iter_thread(void *fth) {
          }
 
          const double logvis = p[3];
-         bucket *buckets = (bucket *)(fthp->buckets);
+         bucket *const buckets = (bucket *)(fthp->buckets);
 
          /* Skip if invisible */
          if (logvis==0)
             continue;
 
-         b = buckets + (int)(ficp->ws0 * p0 - ficp->wb0s0) +
+         bucket *const b = buckets + (int)(ficp->ws0 * p0 - ficp->wb0s0) +
              ficp->width * (int)(ficp->hs1 * p1 - ficp->hb1s1);
 
          __builtin_prefetch(b);
@@ -450,42 +451,21 @@ static void iter_thread(void *fth) {
 
          double interpcolor[4];
 
-         if (flam3_palette_mode_linear == fthp->cp.palette_mode) {
-            double dbl_frac;
-            if (color_index0 < 0) {
-               color_index0 = 0;
-               dbl_frac = 0;
-            } else if (color_index0 >= cmap_size_m1) {
-               color_index0 = cmap_size_m1-1;
-               dbl_frac = 1.0;
-            } else {
-               /* interpolate between color_index0 and color_index0+1 */
-               dbl_frac = dbl_index0 - (double)color_index0;
-            }
-
-            for (int ci=0;ci<4;ci++) {
-               interpcolor[ci] = ficp->dmap[color_index0].color[ci] * (1.0-dbl_frac) +
-                                 ficp->dmap[color_index0+1].color[ci] * dbl_frac;
-            }
-
-         } else { /* Palette mode step */
-
-            if (color_index0 < 0) {
-               color_index0 = 0;
-            } else if (color_index0 >= cmap_size_m1) {
-               color_index0 = cmap_size_m1;
-            }
-
-            for (int ci=0;ci<4;ci++)
-               interpcolor[ci] = ficp->dmap[color_index0].color[ci];
+         if (color_index0 < 0) {
+            color_index0 = 0;
+         } else if (color_index0 >= cmap_size_m1) {
+            color_index0 = cmap_size_m1;
          }
 
-         bump_no_overflow(b[0][0], logvis*interpcolor[0]);
-         bump_no_overflow(b[0][1], logvis*interpcolor[1]);
-         bump_no_overflow(b[0][2], logvis*interpcolor[2]);
-         bump_no_overflow(b[0][3], logvis*interpcolor[3]);
+         for (int ci=0;ci<4;ci++)
+            interpcolor[ci] = ficp->dmap[color_index0].color[ci];
 
-         bump_no_overflow(b[0][4], logvis);
+         b[0][0] += logvis*interpcolor[0];
+         b[0][1] += logvis*interpcolor[1];
+         b[0][2] += logvis*interpcolor[2];
+         b[0][3] += logvis*interpcolor[3];
+
+         b[0][4] += logvis;
       }
 
       #if defined(HAVE_LIBPTHREAD) && defined(USE_LOCKS)

@@ -28,6 +28,7 @@
 #include "parser.h"
 #include "filters.h"
 #include "palettes.h"
+#include <assert.h>
 #include <limits.h>
 #include <locale.h>
 #include <math.h>
