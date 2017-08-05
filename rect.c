@@ -632,9 +632,9 @@ static int render_rectangle(flam3_frame *spec, void *out,
 
    const long nbuckets = (long)fic.width * (long)fic.height;
 
-   bucket *const buckets = (bucket *) aligned_alloc(32, sizeof(bucket) * nbuckets * spec->nthreads);
-   abucket *const accumulate = (abucket *) aligned_alloc(32, sizeof(abucket) * nbuckets);
-   double *const points = (double *) aligned_alloc(32, 4 * sizeof(double) * (size_t)(spec->sub_batch_size) * spec->nthreads);
+   bucket *const buckets = (bucket *) aligned_alloc(64, sizeof(bucket) * nbuckets * spec->nthreads);
+   abucket *const accumulate = (abucket *) aligned_alloc(64, sizeof(abucket) * nbuckets);
+   double *const points = (double *) aligned_alloc(64, 4 * sizeof(double) * (size_t)(spec->sub_batch_size) * spec->nthreads);
    assert(buckets != NULL);
    assert(accumulate != NULL);
    assert(points != NULL);
