@@ -260,8 +260,6 @@ static void iter_thread(void *fth) {
    struct timespec pauset;
    int SBS = ficp->spec->sub_batch_size;
    int fuse;
-   int cmap_size = ficp->cmap_size;
-   int cmap_size_m1 = ficp->cmap_size-1;
 
    double eta = 0.0;
    
@@ -456,13 +454,13 @@ static void iter_thread(void *fth) {
          __builtin_prefetch(b);
          __builtin_prefetch(l);
 
-         const double dbl_index0 = p[2] * cmap_size;
+         const double dbl_index0 = p[2] * 256;
          int color_index0 = (int) (dbl_index0);
 
          if (color_index0 < 0) {
             color_index0 = 0;
-         } else if (color_index0 >= cmap_size_m1) {
-            color_index0 = cmap_size_m1;
+         } else if (color_index0 >= 255) {
+            color_index0 = 255;
          }
 
          const __m256d v_b           = _mm256_load_pd(b[0]);
@@ -521,8 +519,7 @@ static int render_rectangle(flam3_frame *spec, void *out,
    time_t tstart,tend;   
    double sumfilt;
    char *ai;
-   int cmap_size;
-   
+
    char *last_block;
    size_t memory_rqd;
 
@@ -538,9 +535,6 @@ static int render_rectangle(flam3_frame *spec, void *out,
    fic.aborted = 0;
 
    stats->num_iters = 0;
-
-   /* correct for apophysis's use of 255 colors in the palette rather than all 256 */
-   cmap_size = 256 - argi("apo_palette",0);
 
    memset(&cp,0, sizeof(flam3_genome));
 
@@ -793,7 +787,6 @@ static int render_rectangle(flam3_frame *spec, void *out,
          fic.ntemporal_samples = ntemporal_samples;
          fic.batch_num = batch_num;
          fic.nbatches = nbatches;
-         fic.cmap_size = cmap_size;
 
          fic.dmap = &dmap[0];
          fic.color_scalar = color_scalar;
