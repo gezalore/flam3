@@ -442,10 +442,6 @@ static void iter_thread(void *fth) {
 
          const double logvis = p[3];
 
-         /* Skip if invisible */
-         if (logvis==0)
-            continue;
-
          const int idx = (int)(ficp->ws0 * p0 - ficp->wb0s0) +
                  ficp->width * (int)(ficp->hs1 * p1 - ficp->hb1s1);
 
