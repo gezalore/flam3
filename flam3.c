@@ -20,6 +20,8 @@
 #define _GNU_SOURCE
 #endif
 
+#include "immintrin.h"
+
 #include "private.h"
 #include "img.h"
 #include "config.h"

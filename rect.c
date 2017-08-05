@@ -465,12 +465,12 @@ static void iter_thread(void *fth) {
             color_index0 = cmap_size_m1;
          }
 
-         const double *const interpcolor = dmap[color_index0];
-
-         b[0][0] += logvis*interpcolor[0];
-         b[0][1] += logvis*interpcolor[1];
-         b[0][2] += logvis*interpcolor[2];
-         b[0][3] += logvis*interpcolor[3];
+         const __m256d v_b           = _mm256_load_pd(b[0]);
+         const __m256d v_itnerpcolor = _mm256_load_pd(dmap[color_index0]);
+         const __m256d v_logvis      = _mm256_set1_pd(logvis);
+         const __m256d v_product     = _mm256_mul_pd (v_logvis, v_itnerpcolor);
+         const __m256d v_sum         = _mm256_add_pd (v_b, v_product);
+         _mm256_store_pd(b[0], v_sum);
 
          l[0] += logvis;
       }
