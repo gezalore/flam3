@@ -425,8 +425,10 @@ static void iter_thread(void *fth) {
       const double C0 = -R00*E - R01*F + E;
       const double C1 = -R10*E - R11*F + F;
 
-      bucket *const buckets = (bucket *)(fthp->buckets);
-      double *const logviss = (double *)(fthp->logviss);
+      bucket *const buckets = (bucket *)fthp->buckets;
+      double *const logviss = (double *)fthp->logviss;
+
+      const double (*const dmap)[4] = ficp->dmap;
 
       /* Put them in the bucket accumulator */
       for (j = 0; j < sub_batch_size*4; j+=4) {
@@ -463,7 +465,7 @@ static void iter_thread(void *fth) {
             color_index0 = cmap_size_m1;
          }
 
-         const double *const interpcolor = ficp->dmap[color_index0];
+         const double *const interpcolor = dmap[color_index0];
 
          b[0][0] += logvis*interpcolor[0];
          b[0][1] += logvis*interpcolor[1];
@@ -498,7 +500,7 @@ static int render_rectangle(flam3_frame *spec, void *out,
    double highpow;
    int nbatches;
    int ntemporal_samples;
-   double dmap[256][4];
+   __attribute__((aligned(32))) double dmap[256][4];
    int gutter_width;
    double vibrancy = 0.0;
    double gamma = 0.0;
@@ -641,10 +643,10 @@ static int render_rectangle(flam3_frame *spec, void *out,
 
    const long nbuckets = (long)fic.width * (long)fic.height;
 
-   bucket *const buckets = (bucket *) malloc(sizeof(bucket) * nbuckets * spec->nthreads);
-   double *const logviss = (double *) malloc(sizeof(double) * nbuckets * spec->nthreads);
-   abucket *const accumulate = (abucket *) malloc(sizeof(abucket) * nbuckets);
-   double *const points = (double *) malloc(4 * sizeof(double) * (size_t)(spec->sub_batch_size) * spec->nthreads);
+   bucket *const buckets = (bucket *) aligned_alloc(32, sizeof(bucket) * nbuckets * spec->nthreads);
+   double *const logviss = (double *) aligned_alloc(32, sizeof(double) * nbuckets * spec->nthreads);
+   abucket *const accumulate = (abucket *) aligned_alloc(32, sizeof(abucket) * nbuckets);
+   double *const points = (double *) aligned_alloc(32, 4 * sizeof(double) * (size_t)(spec->sub_batch_size) * spec->nthreads);
    assert(buckets != NULL);
    assert(accumulate != NULL);
    assert(points != NULL);
