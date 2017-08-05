@@ -463,7 +463,7 @@ static void iter_thread(void *fth) {
             color_index0 = cmap_size_m1;
          }
 
-         const double *const interpcolor = ficp->dmap[color_index0].color;
+         const double *const interpcolor = ficp->dmap[color_index0];
 
          b[0][0] += logvis*interpcolor[0];
          b[0][1] += logvis*interpcolor[1];
@@ -498,7 +498,7 @@ static int render_rectangle(flam3_frame *spec, void *out,
    double highpow;
    int nbatches;
    int ntemporal_samples;
-   flam3_palette dmap;
+   double dmap[256][4];
    int gutter_width;
    double vibrancy = 0.0;
    double gamma = 0.0;
@@ -726,9 +726,8 @@ static int render_rectangle(flam3_frame *spec, void *out,
          /* compute the colormap entries.                             */
          /* the input colormap is 256 long with entries from 0 to 1.0 */
          for (j = 0; j < CMAP_SIZE; j++) {
-            dmap[j].index = cp.palette[(j * 256) / CMAP_SIZE].index / 256.0;
             for (k = 0; k < 4; k++)
-               dmap[j].color[k] = (cp.palette[(j * 256) / CMAP_SIZE].color[k] * WHITE_LEVEL) * color_scalar;
+               dmap[j][k] = (cp.palette[(j * 256) / CMAP_SIZE].color[k] * WHITE_LEVEL) * color_scalar;
          }
 
          /* compute camera */
@@ -794,7 +793,7 @@ static int render_rectangle(flam3_frame *spec, void *out,
          fic.nbatches = nbatches;
          fic.cmap_size = cmap_size;
 
-         fic.dmap = (flam3_palette_entry *)dmap;
+         fic.dmap = &dmap[0];
          fic.color_scalar = color_scalar;
          fic.buckets = (void *)buckets;
          
@@ -1244,9 +1243,9 @@ static int render_rectangle(flam3_frame *spec, void *out,
      for (j = 0; j < ph; j++) {
        for (i = 0; i < image_width; i++) {
 	 unsigned char *p = (unsigned char *)out + nchan * (i + j * out_width);
-	 p[0] = (unsigned char)dmap[i * 256 / image_width].color[0];
-	 p[1] = (unsigned char)dmap[i * 256 / image_width].color[1];
-	 p[2] = (unsigned char)dmap[i * 256 / image_width].color[2];
+	 p[0] = (unsigned char)dmap[i * 256 / image_width][0];
+	 p[1] = (unsigned char)dmap[i * 256 / image_width][1];
+	 p[2] = (unsigned char)dmap[i * 256 / image_width][2];
        }
      }
    }
