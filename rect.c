@@ -424,9 +424,9 @@ static void iter_thread(void *fth) {
       const double C0 = -R00*E - R01*F + E;
       const double C1 = -R10*E - R11*F + F;
 
-      bucket *const buckets = (bucket *)fthp->buckets;
+      const __m128d v_R0 = _mm_set_pd(R01, R00);
+      const __m128d v_R1 = _mm_set_pd(R11, R10);
 
-      const v4d *const dmap =  ficp->dmap;
       v4d *const iter_storage = (v4d*)fthp->iter_storage;
 
       int i = 0;
@@ -434,9 +434,13 @@ static void iter_thread(void *fth) {
       /* Rotate points, compute boundaries */
       for (j = 0; j < sub_batch_size; j+=1) {
          const double *const p = iter_storage[j];
+         const __m128d v_p10 = _mm_load_pd(p);
 
-         const double p0 =  p[0] * R00 + p[1] * R01 + C0;
-         const double p1 =  p[0] * R10 + p[1] * R11 + C1;
+         const __m128d v_p0 = _mm_dp_pd(v_p10, v_R0, 0x31);
+         const __m128d v_p1 = _mm_dp_pd(v_p10, v_R1, 0x31);
+
+         const double p0 =  _mm_cvtsd_f64(v_p0) + C0;
+         const double p1 =  _mm_cvtsd_f64(v_p1) + C1;
 
          const int idx = (int)(ficp->ws0 * p0 - ficp->wb0s0) + ficp->width * (int)(ficp->hs1 * p1 - ficp->hb1s1);
 
@@ -446,6 +450,9 @@ static void iter_thread(void *fth) {
          i += p0 >= ficp->bounds[0] && p1 >= ficp->bounds[1] && p0 <= ficp->bounds[2] && p1 <= ficp->bounds[3];
       }
 
+      bucket *const buckets = (bucket *)fthp->buckets;
+
+      const v4d *const dmap =  ficp->dmap;
 
       /* Put them in the bucket accumulator */
 #define UNROLL 32
