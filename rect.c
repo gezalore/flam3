@@ -449,16 +449,13 @@ static void iter_thread(void *fth) {
          const double dbl_index0 = p[2] * cmap_size;
          int color_index0 = (int) (dbl_index0);
 
-         double interpcolor[4];
-
          if (color_index0 < 0) {
             color_index0 = 0;
          } else if (color_index0 >= cmap_size_m1) {
             color_index0 = cmap_size_m1;
          }
 
-         for (int ci=0;ci<4;ci++)
-            interpcolor[ci] = ficp->dmap[color_index0].color[ci];
+         const double *const interpcolor = ficp->dmap[color_index0].color;
 
          b[0][0] += logvis*interpcolor[0];
          b[0][1] += logvis*interpcolor[1];
