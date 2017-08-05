@@ -446,16 +446,31 @@ static void iter_thread(void *fth) {
          i += p0 >= ficp->bounds[0] && p1 >= ficp->bounds[1] && p0 <= ficp->bounds[2] && p1 <= ficp->bounds[3];
       }
 
-      /* Put them in the bucket accumulator */
-      for (j = 0; j < i; j+=1) {
-         const double *const p = iter_storage[j];
 
-         const int idx           = (int) p[0];
+      /* Put them in the bucket accumulator */
+#define UNROLL 32
+      bucket *pb[UNROLL];
+
+      for (j = 0; j < UNROLL ; j++) {
+          const double *const ppf = iter_storage[j];
+          const int idxpf         = (int) ppf[0];
+          bucket *const bpf       = buckets + idxpf;
+          __builtin_prefetch(bpf);
+          pb[j % UNROLL] = bpf;
+      }
+
+      for (j = 0; j < i - UNROLL; j+=1) {
+         bucket *const b         = pb[j % UNROLL];
+
+         const double *const ppf = iter_storage[j + UNROLL];
+         const int idxpf         = (int) ppf[0];
+         bucket *const bpf       = buckets + idxpf;
+         __builtin_prefetch(bpf);
+         pb[j % UNROLL] = bpf;
+
+         const double *const p   = iter_storage[j];
          const double dbl_index0 = p[2] * 256;
          const double logvis     = p[3];
-
-         bucket *const b = buckets + idx;
-         __builtin_prefetch(b);
 
          const __m128i v_cidx32 =  _mm_set1_epi32((int) (dbl_index0));
          const __m128i v_cidx16 = _mm_packs_epi32(v_cidx32, v_cidx32);
@@ -471,6 +486,29 @@ static void iter_thread(void *fth) {
 
          b[0][4] += logvis;
       }
+
+      for (; j < i; j+=1) {
+         bucket *const b         = pb[j % UNROLL];
+
+         const double *const p   = iter_storage[j];
+         const double dbl_index0 = p[2] * 256;
+         const double logvis     = p[3];
+
+         const __m128i v_cidx32 =  _mm_set1_epi32((int) (dbl_index0));
+         const __m128i v_cidx16 = _mm_packs_epi32(v_cidx32, v_cidx32);
+         const __m128i v_cidx8  = _mm_packus_epi16(v_cidx16, v_cidx16);
+         const int cidx = _mm_extract_epi8(v_cidx8, 0);
+         const __m256d v_itnerpcolor = _mm256_load_pd(dmap[cidx]);
+
+         const __m256d v_b           = _mm256_load_pd(b[0]);
+         const __m256d v_logvis      = _mm256_set1_pd(logvis);
+         const __m256d v_product     = _mm256_mul_pd (v_logvis, v_itnerpcolor);
+         const __m256d v_sum         = _mm256_add_pd (v_b, v_product);
+         _mm256_store_pd(b[0], v_sum);
+
+         b[0][4] += logvis;
+      }
+#undef UNROLL
 
       #if defined(HAVE_LIBPTHREAD) && defined(USE_LOCKS)
         /* Release mutex */
