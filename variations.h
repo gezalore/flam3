@@ -24,10 +24,6 @@
 #include "private.h"
 
 typedef __attribute__((aligned(32)))  struct {
-
-  __m128d t; /* Starting coordinates */
-  __m128d p; /* Output coordinates */
-
   __m128d precalc_v_sqrt;
   __m128d precalc_v_sumsq;
 
