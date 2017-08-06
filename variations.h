@@ -23,7 +23,23 @@
 
 #include "private.h"
 
+typedef struct {
 
+  __m128d t; /* Starting coordinates */
+  __m128d p; /* Output coordinates */
+
+  double precalc_atan, precalc_sina; /* Precalculated, if needed */
+  double precalc_cosa, precalc_sqrt;
+  double precalc_sumsq, precalc_atanyx;
+
+  flam3_xform *xform; /* For the important values */
+
+
+
+  /* Pointer to the isaac RNG state */
+  randctx *rc;
+
+} flam3_iter_helper;
 
 /* Variation functions */
 void var0_linear(flam3_iter_helper *, double);

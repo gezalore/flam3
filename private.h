@@ -19,6 +19,8 @@
 #ifndef private_included
 #define private_included
 
+#include "immintrin.h"
+
 #include "flam3.h"
 #include "config.h"
 #include <stdlib.h>
@@ -98,25 +100,6 @@ typedef struct {
 #endif
    
 } flam3_iter_constants;
-
-typedef struct {
-
-   double tx,ty; /* Starting coordinates */
-
-   double precalc_atan, precalc_sina;  /* Precalculated, if needed */
-   double precalc_cosa, precalc_sqrt;
-   double precalc_sumsq,precalc_atanyx;
-
-   flam3_xform *xform; /* For the important values */
-
-   /* Output Coords */
-
-   double p0, p1;
-
-   /* Pointer to the isaac RNG state */
-   randctx *rc;
-
-} flam3_iter_helper;
 
 typedef struct {
    double (*buckets)[8];
