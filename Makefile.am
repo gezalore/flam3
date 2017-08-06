@@ -10,7 +10,7 @@ bin_PROGRAMS = flam3-animate flam3-genome flam3-render flam3-convert
 lib_LTLIBRARIES = libflam3.la
 include_HEADERS = flam3.h isaac.h isaacs.h rect.c
 
-libflam3_la_SOURCES = flam3.c filters.c parser.c variations.c interpolation.c palettes.c jpeg.c png.c isaac.c
+libflam3_la_SOURCES = flam3.c filters.c parser.c interpolation.c palettes.c jpeg.c png.c isaac.c
 libflam3_la_LDFLAGS = -no-undefined -ljpeg -lpng -lz -lpthread
 
 flam3_genome_SOURCES = flam3-genome.c docstring.c
@@ -27,7 +27,7 @@ flam3_convert_LDADD = libflam3.la -lm
 
 pkgdata_DATA = flam3-palettes.xml
 
-EXTRA_DIST = rect.c flam3.h palettes.h variations.h interpolation.h parser.h \
+EXTRA_DIST = rect.c flam3.h palettes.h variations.c variations.h interpolation.h parser.h \
    private.h isaac.h isaacs.h img.h test.flam3 vidres.flam3 \
    flam3.dsw render.dsp animate.dsp genome.dsp convert.dsp \
    mkinstalldirs README.txt COPYING.txt flam3-palettes.xml \

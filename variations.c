@@ -16,7 +16,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "variations.h"
+#include "immintrin.h"
+
+#include "private.h"
+
 #include "interpolation.h" 
 
 typedef __attribute__((aligned(32)))   struct {
@@ -2252,7 +2255,7 @@ static void supershape_precalc(flam3_xform *xf) {
    xf->super_shape_pneg1_n1 = -1.0 / xf->super_shape_n1;
 }
 
-void xform_precalc(flam3_genome *cp, int xi) {
+static void xform_precalc(flam3_genome *cp, int xi) {
 
    perspective_precalc(&(cp->xform[xi]));
    juliaN_precalc(&(cp->xform[xi]));
@@ -2262,11 +2265,8 @@ void xform_precalc(flam3_genome *cp, int xi) {
    disc2_precalc(&(cp->xform[xi]));
    supershape_precalc(&(cp->xform[xi]));
    wedgeJulia_precalc(&(cp->xform[xi]));   
-}   
 
-
-
-
+}
 
 typedef __m128d (*varFuncPtr)(__m128d t, double weight, flam3_iter_helper *f);
 
@@ -2372,7 +2372,7 @@ static varFuncPtr varFuncTab[flam3_nvariations] = {
    &var98_mobius
 };
 
-int prepare_precalc_flags(flam3_genome *cp) {
+static int prepare_precalc_flags(flam3_genome *cp) {
 
    double d;
    int i,j,totnum;
@@ -2502,7 +2502,7 @@ static __m128d apply_affine(__m128d p, const v2d *c) {
   return _mm_add_pd(v_p, v_off);
 }
 
-__m128d apply_xform(const flam3_genome * const cp,
+static __m128d apply_xform(const flam3_genome * const cp,
     const flam3_xform * const xform,
     const __m128d p,
     randctx * const rc, int * const badvals, int attempts)
@@ -2576,7 +2576,7 @@ __m128d apply_xform(const flam3_genome * const cp,
   return apply_xform(cp, xform, v_q, rc, badvals, attempts - 1);
 }
 
-void initialize_xforms(flam3_genome *thiscp, int start_here) {
+static void initialize_xforms(flam3_genome *thiscp, int start_here) {
 
    int i,j;
    for (i = start_here ; i < thiscp->num_xforms ; i++) {

@@ -19,16 +19,5 @@
 #ifndef variations_included
 #define variations_included
 
-#include "immintrin.h"
 
-#include "private.h"
-
-void xform_precalc(flam3_genome *cp, int xi);
-int prepare_precalc_flags(flam3_genome *);
-
-__m128d apply_xform(const flam3_genome *cp, const flam3_xform * const xform,
-    const __m128d p,
-    randctx *rc,
-    int *bad, int consec);
-void initialize_xforms(flam3_genome *thiscp, int start_here);
 #endif

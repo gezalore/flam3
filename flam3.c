@@ -61,6 +61,7 @@
 #endif
 
 
+#include "variations.c"
 
 char *flam3_version() {
 
