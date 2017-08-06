@@ -233,72 +233,74 @@ int flam3_create_chaos_distrib(flam3_genome *cp, int xi, unsigned short *xform_d
 
 static
 int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned short *xform_distrib, randctx *rc) {
-   int i;
-   double p[4], q[4];
-   int consec = 0;
-   int badvals = 0;
-   int lastxf=0;
-   int fn;
-   
-   p[0] = samples[0];
-   p[1] = samples[1];
-   p[2] = samples[2];
-   p[3] = samples[3];
+  int i;
+  double p[4], q[4];
+  int consec = 0;
+  int badvals = 0;
+  int lastxf = 0;
+  int fn;
 
-   /* Perform precalculations */   
-   for (i=0;i<cp->num_xforms;i++)
-      xform_precalc(cp,i);
+  p[0] = samples[0];
+  p[1] = samples[1];
+  p[2] = samples[2];
+  p[3] = samples[3];
 
-   for (i = -4*fuse; i < 4*n; i+=4) {
-   
+  /* Perform precalculations */
+  for (i = 0; i < cp->num_xforms; i++)
+    xform_precalc(cp, i);
+
+  for (i = -4 * fuse; i < 4 * n; i += 4) {
+
 //         fn = xform_distrib[ lastxf*CHOOSE_XFORM_GRAIN + (((unsigned)irand(rc)) % CHOOSE_XFORM_GRAIN)];
-      if (cp->chaos_enable)
-         fn = xform_distrib[ lastxf*CHOOSE_XFORM_GRAIN + (((unsigned)irand(rc)) & CHOOSE_XFORM_GRAIN_M1)];
-      else
-         fn = xform_distrib[ ((unsigned)irand(rc)) & CHOOSE_XFORM_GRAIN_M1 ];
-      
-      if (apply_xform(cp, fn, p, q, rc)>0) {
-         consec ++;
-         badvals ++;
-         if (consec<5) {
-            p[0] = q[0];
-            p[1] = q[1];
-            p[2] = q[2];
-            p[3] = q[3];
-            i -= 4;
-            continue;
-         } else
-            consec = 0;
+    if (cp->chaos_enable)
+      fn = xform_distrib[lastxf * CHOOSE_XFORM_GRAIN
+          + (((unsigned) irand(rc)) & CHOOSE_XFORM_GRAIN_M1)];
+    else
+      fn = xform_distrib[((unsigned) irand(rc)) & CHOOSE_XFORM_GRAIN_M1];
+
+    if (apply_xform(cp, fn, p, q, rc) > 0) {
+      consec++;
+      badvals++;
+      if (consec < 5) {
+        p[0] = q[0];
+        p[1] = q[1];
+        p[2] = q[2];
+        p[3] = q[3];
+        i -= 4;
+        continue;
       } else
-         consec = 0;
+        consec = 0;
+    } else
+      consec = 0;
 
-      /* Store the last used transform */
-      lastxf = fn+1;
+    /* Store the last used transform */
+    lastxf = fn + 1;
 
-      p[0] = q[0];
-      p[1] = q[1];
-      p[2] = q[2];
-      p[3] = q[3];
+    p[0] = q[0];
+    p[1] = q[1];
+    p[2] = q[2];
+    p[3] = q[3];
 
-      if (cp->final_xform_enable == 1) {
-         if (cp->xform[cp->final_xform_index].opacity==1 || 
-                flam3_random_isaac_01(rc)<cp->xform[cp->final_xform_index].opacity) {
-             apply_xform(cp, cp->final_xform_index, p, q, rc);
-             /* Keep the opacity from the original xform */
-             q[3] = p[3];
-         }
+    if (cp->final_xform_enable == 1) {
+      if (cp->xform[cp->final_xform_index].opacity == 1
+          || flam3_random_isaac_01(rc)
+              < cp->xform[cp->final_xform_index].opacity) {
+        apply_xform(cp, cp->final_xform_index, p, q, rc);
+        /* Keep the opacity from the original xform */
+        q[3] = p[3];
       }
+    }
 
-      /* if fuse over, store it */
-      if (i >= 0) {
-         samples[i] = q[0];
-         samples[i+1] = q[1];
-         samples[i+2] = q[2];
-         samples[i+3] = q[3];
-      }
-   }
-   
-   return(badvals);
+    /* if fuse over, store it */
+    if (i >= 0) {
+      samples[i] = q[0];
+      samples[i + 1] = q[1];
+      samples[i + 2] = q[2];
+      samples[i + 3] = q[3];
+    }
+  }
+
+  return badvals;
 }
 
 int flam3_xform_preview(flam3_genome *cp, int xi, double range, int numvals, int depth, double *result, randctx *rc) {
