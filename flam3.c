@@ -277,11 +277,12 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
         p[3] = q[3];
         i -= 1;
         continue;
-      } else
+      } else {
         consec = 0;
-    } else
+      }
+    } else {
       consec = 0;
-
+    }
 
     p[0] = q[0];
     p[1] = q[1];
