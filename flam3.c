@@ -360,7 +360,7 @@ int flam3_colorhist(flam3_genome *cp, int num_batches, randctx *rc, double *hist
   int mycolor;
   unsigned short *xform_distrib;
   int sbs = 10000;
-  double sub_batch[4*10000];
+  __attribute__((aligned(32))) double sub_batch[4 * 10000];
 
   memset(hist,0,256*sizeof(double));
   
@@ -3591,9 +3591,11 @@ int flam3_estimate_bounding_box(flam3_genome *cp, double eps, int nsamples,
    int bv;
    unsigned short *xform_distrib;
 
-   if (nsamples <= 0) nsamples = 10000;
+      if (nsamples <= 0) {
+        nsamples = 10000;
+      }
 
-   points = (double *) malloc(sizeof(double) * 4 * nsamples);
+      points = (double *) aligned_alloc(32, sizeof(double) * 4 * nsamples);
    points[0] = flam3_random_isaac_11(rc);
    points[1] = flam3_random_isaac_11(rc);
    points[2] = 0.0;
@@ -3783,7 +3785,7 @@ double flam3_dimension(flam3_genome *cp, int ntries, int clip_to_camera) {
   got = 0;
   nclipped = 0;
   while (got < 2*ntries) {
-    double subb[40000];
+    __attribute__((aligned(32))) double subb[40000];
     int i4, clipped;
     unsigned short *xform_distrib;
     subb[0] = flam3_random_isaac_11(&rc);
@@ -3852,7 +3854,7 @@ double flam3_dimension(flam3_genome *cp, int ntries, int clip_to_camera) {
 }
 
 double flam3_lyapunov(flam3_genome *cp, int ntries) {
-  double p[4];
+  __attribute__((aligned(32))) double p[4];
   double x, y;
   double xn, yn;
   double xn2, yn2;
