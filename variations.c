@@ -2233,69 +2233,71 @@ int prepare_precalc_flags(flam3_genome *cp) {
 __m256d apply_xform(flam3_genome * const cp, const int fn, const __m256d p,
     randctx * const rc, int * const badvals, int consec)
 {
-   flam3_iter_helper f;
-   int var_n;
-   double s1;
-   double weight;
+  flam3_iter_helper f;
+  int var_n;
+  double s1;
+  double weight;
 
   __m256d q;
 
-   f.rc = rc;
+  f.rc = rc;
 
-   s1 = cp->xform[fn].color_speed;
+  s1 = cp->xform[fn].color_speed;
 
   q[2] = s1 * cp->xform[fn].color + (1.0 - s1) * p[2];
 
-   f.tx = cp->xform[fn].c[0][0] * p[0] + cp->xform[fn].c[1][0] * p[1] + cp->xform[fn].c[2][0];
-   f.ty = cp->xform[fn].c[0][1] * p[0] + cp->xform[fn].c[1][1] * p[1] + cp->xform[fn].c[2][1];
+  f.tx = cp->xform[fn].c[0][0] * p[0] + cp->xform[fn].c[1][0] * p[1]
+      + cp->xform[fn].c[2][0];
+  f.ty = cp->xform[fn].c[0][1] * p[0] + cp->xform[fn].c[1][1] * p[1]
+      + cp->xform[fn].c[2][1];
 
-   /* Pre-xforms go here, and modify the f.tx and f.ty values */
-   if (cp->xform[fn].has_preblur!=0.0)
-      var67_pre_blur(&f, cp->xform[fn].has_preblur);
+  /* Pre-xforms go here, and modify the f.tx and f.ty values */
+  if (cp->xform[fn].has_preblur != 0.0)
+    var67_pre_blur(&f, cp->xform[fn].has_preblur);
 
-   /* Always calculate sumsq and sqrt */
-   f.precalc_sumsq = f.tx*f.tx + f.ty*f.ty;
-   f.precalc_sqrt = sqrt(f.precalc_sumsq);
+  /* Always calculate sumsq and sqrt */
+  f.precalc_sumsq = f.tx * f.tx + f.ty * f.ty;
+  f.precalc_sqrt = sqrt(f.precalc_sumsq);
 
-   /* Check to see if we can precalculate any parts */
-   /* Precalculate atanxy, sin, cos */
-   if (cp->xform[fn].precalc_atan_xy_flag > 0) {
-      f.precalc_atan = atan2(f.tx,f.ty);
-   }
-   
-   if (cp->xform[fn].precalc_angles_flag > 0) {
-      f.precalc_sina = f.tx / f.precalc_sqrt;
-      f.precalc_cosa = f.ty / f.precalc_sqrt;
-   }
+  /* Check to see if we can precalculate any parts */
+  /* Precalculate atanxy, sin, cos */
+  if (cp->xform[fn].precalc_atan_xy_flag > 0) {
+    f.precalc_atan = atan2(f.tx, f.ty);
+  }
 
-   /* Precalc atanyx */
-   if (cp->xform[fn].precalc_atan_yx_flag > 0) {
-      f.precalc_atanyx = atan2(f.ty,f.tx);
-   }
+  if (cp->xform[fn].precalc_angles_flag > 0) {
+    f.precalc_sina = f.tx / f.precalc_sqrt;
+    f.precalc_cosa = f.ty / f.precalc_sqrt;
+  }
 
-   f.p0 = 0.0;
-   f.p1 = 0.0;
-   f.xform = &(cp->xform[fn]);
+  /* Precalc atanyx */
+  if (cp->xform[fn].precalc_atan_yx_flag > 0) {
+    f.precalc_atanyx = atan2(f.ty, f.tx);
+  }
+
+  f.p0 = 0.0;
+  f.p1 = 0.0;
+  f.xform = &(cp->xform[fn]);
 
 
-   for (var_n=0; var_n < cp->xform[fn].num_active_vars; var_n++) {
-      weight = cp->xform[fn].active_var_weights[var_n];
-      varFuncPtr varFunc = (varFuncPtr)(cp->xform[fn].varFunc[var_n]);
-      varFunc(&f, weight);
-   }
+  for (var_n = 0; var_n < cp->xform[fn].num_active_vars; var_n++) {
+    weight = cp->xform[fn].active_var_weights[var_n];
+    varFuncPtr varFunc = (varFuncPtr) (cp->xform[fn].varFunc[var_n]);
+    varFunc(&f, weight);
+  }
 
-   /* apply the post transform */
-   if (cp->xform[fn].has_post) {
+  /* apply the post transform */
+  if (cp->xform[fn].has_post) {
     q[0] = cp->xform[fn].post[0][0] * f.p0 + cp->xform[fn].post[1][0] * f.p1
         + cp->xform[fn].post[2][0];
     q[1] = cp->xform[fn].post[0][1] * f.p0 + cp->xform[fn].post[1][1] * f.p1
         + cp->xform[fn].post[2][1];
-   } else {
+  } else {
     q[0] = f.p0;
     q[1] = f.p1;
-   }
+  }
 
-   /* Check for badvalues and return randoms if bad */
+  /* Check for badvalues and return randoms if bad */
   if (badvalue(q[0]) || badvalue(q[1])) {
     q[0] = flam3_random_isaac_11(rc);
     q[1] = flam3_random_isaac_11(rc);
