@@ -2294,9 +2294,9 @@ static __m128d apply_affine(__m128d p, v2d *c) {
   const __m128d v_R0 = _mm_unpacklo_pd(v_R0t, v_R1t);
   const __m128d v_R1 = _mm_unpackhi_pd(v_R0t, v_R1t);
 
-  const __m128d v_p0 = _mm_dp_pd(p, v_R0, 0x31);
-  const __m128d v_p1 = _mm_dp_pd(p, v_R1, 0x32);
-  const __m128d v_p = _mm_or_pd(v_p0, v_p1);
+  const __m128d v_p0t = _mm_mul_pd(p, v_R0);
+  const __m128d v_p1t = _mm_mul_pd(p, v_R1);
+  const __m128d v_p = _mm_hadd_pd(v_p0t, v_p1t);
   return _mm_add_pd(v_p, v_off);
 }
 
