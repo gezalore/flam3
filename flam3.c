@@ -245,6 +245,12 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
   p[2] = s[0][2];
   p[3] = s[0][3];
 
+  assert(
+      cp->final_xform_enable != 1
+          || cp->xform[cp->final_xform_index].opacity == 1);
+
+  const int fte = cp->final_xform_enable == 1;
+
   /* Perform precalculations */
   for (int i = 0; i < cp->num_xforms; i++)
     xform_precalc(cp, i);
@@ -280,14 +286,10 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
     p[2] = q[2];
     p[3] = q[3];
 
-    if (cp->final_xform_enable == 1) {
-      if (cp->xform[cp->final_xform_index].opacity == 1
-          || flam3_random_isaac_01(rc)
-              < cp->xform[cp->final_xform_index].opacity) {
-        apply_xform(cp, cp->final_xform_index, p, q, rc);
-        /* Keep the opacity from the original xform */
-        q[3] = p[3];
-      }
+    if (fte) {
+      apply_xform(cp, cp->final_xform_index, p, q, rc);
+      /* Keep the opacity from the original xform */
+      q[3] = p[3];
     }
 
     /* if fuse over, store it */
