@@ -275,12 +275,22 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
       s[i] = apply_xform(cp, cp->final_xform_index, p, rc, &dummy, 5),
       s[i][3] = cp->xform[fn].vis_adjusted;
     }
-  } else {
+  } else if (xform_gain) {
     for (int i = 0; i < n; i += 1) {
       const int fidx = (((unsigned) irand(rc)) & xform_mask) + lastfidx;
       const int fn = xform_distrib[fidx];
       /* Store the last used transform */
       lastfidx = (fn + 1) * xform_gain;
+
+      p = apply_xform(cp, fn, p, rc, &badvals, 0);
+
+      s[i] = p;
+      s[i][3] = cp->xform[fn].vis_adjusted;
+    }
+  } else {
+    for (int i = 0; i < n; i += 1) {
+      const int fidx = ((unsigned) irand(rc)) & xform_mask;
+      const int fn = xform_distrib[fidx];
 
       p = apply_xform(cp, fn, p, rc, &badvals, 0);
 
