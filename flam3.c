@@ -240,6 +240,7 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
   int badvals = 0;
   int dummy = 0;
 
+
   /* Perform precalculations */
   for (int i = 0; i < cp->num_xforms; i++)
     xform_precalc(cp, i);
@@ -255,14 +256,22 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
 
   const flam3_xform * const xform = cp->xform;
 
+  assert(cp->num_xforms <= 64);
+  double color_offset[64];
+  double color_weight[64];
+
+  for (int i = 0; i < cp->num_xforms; i++) {
+    color_offset[i] = xform[i].color_speed * xform[i].color;
+    color_weight[i] = 1.0 - xform[i].color_speed;
+  }
+
   for (int i = -fuse; i < 0; i += 1) {
     const int fidx = (((unsigned) irand(rc)) & xform_mask) + lastfidx;
     const int fn = xform_distrib[fidx];
     /* Store the last used transform */
     lastfidx = (fn + 1) * xform_gain;
 
-    const double s1 = xform[fn].color_speed;
-    c = s1 * xform[fn].color + (1.0 - s1) * c;
+    c = color_weight[fn] * c + color_offset[fn];
 
     p = apply_xform(cp, fn, p, rc, &badvals, 5);
   }
@@ -278,8 +287,7 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
 
       p = apply_xform(cp, fn, p, rc, &badvals, 5);
 
-      const double s1 = xform[fn].color_speed;
-      c = s1 * xform[fn].color + (1.0 - s1) * c;
+      c = color_weight[fn] * c + color_offset[fn];
 
       const __m128d pp = apply_xform(cp, cp->final_xform_index, p, rc, &dummy,
           1);
@@ -295,8 +303,7 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
 
       p = apply_xform(cp, fn, p, rc, &badvals, 5);
 
-      const double s1 = xform[fn].color_speed;
-      c = s1 * xform[fn].color + (1.0 - s1) * c;
+      c = color_weight[fn] * c + color_offset[fn];
 
       s[i] = _mm256_set_pd(xform[fn].vis_adjusted, c, p[1], p[0]);
     }
@@ -307,8 +314,7 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
 
       p = apply_xform(cp, fn, p, rc, &badvals, 5);
 
-      const double s1 = xform[fn].color_speed;
-      c = s1 * xform[fn].color + (1.0 - s1) * c;
+      c = color_weight[fn] * c + color_offset[fn];
 
       s[i] = _mm256_set_pd(xform[fn].vis_adjusted, c, p[1], p[0]);
     }
