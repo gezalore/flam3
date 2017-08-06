@@ -233,30 +233,29 @@ int flam3_create_chaos_distrib(flam3_genome *cp, int xi, unsigned short *xform_d
 
 static
 int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned short *xform_distrib, randctx *rc) {
-  int i;
-  double p[4], q[4];
+  v4d p;
+  v4d q;
   int consec = 0;
   int badvals = 0;
   int lastxf = 0;
-  int fn;
+  v4d *s = (v4d*) samples;
 
-  p[0] = samples[0];
-  p[1] = samples[1];
-  p[2] = samples[2];
-  p[3] = samples[3];
+  p[0] = s[0][0];
+  p[1] = s[0][1];
+  p[2] = s[0][2];
+  p[3] = s[0][3];
 
   /* Perform precalculations */
-  for (i = 0; i < cp->num_xforms; i++)
+  for (int i = 0; i < cp->num_xforms; i++)
     xform_precalc(cp, i);
 
-  for (i = -4 * fuse; i < 4 * n; i += 4) {
+  for (int i = -fuse; i < n; i += 1) {
 
-//         fn = xform_distrib[ lastxf*CHOOSE_XFORM_GRAIN + (((unsigned)irand(rc)) % CHOOSE_XFORM_GRAIN)];
+    int fidx = ((unsigned) irand(rc)) & CHOOSE_XFORM_GRAIN_M1;
     if (cp->chaos_enable)
-      fn = xform_distrib[lastxf * CHOOSE_XFORM_GRAIN
-          + (((unsigned) irand(rc)) & CHOOSE_XFORM_GRAIN_M1)];
-    else
-      fn = xform_distrib[((unsigned) irand(rc)) & CHOOSE_XFORM_GRAIN_M1];
+      fidx += lastxf * CHOOSE_XFORM_GRAIN;
+
+    const int fn = xform_distrib[fidx];
 
     if (apply_xform(cp, fn, p, q, rc) > 0) {
       consec++;
@@ -266,7 +265,7 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
         p[1] = q[1];
         p[2] = q[2];
         p[3] = q[3];
-        i -= 4;
+        i -= 1;
         continue;
       } else
         consec = 0;
@@ -293,10 +292,10 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
 
     /* if fuse over, store it */
     if (i >= 0) {
-      samples[i] = q[0];
-      samples[i + 1] = q[1];
-      samples[i + 2] = q[2];
-      samples[i + 3] = q[3];
+      s[i][0] = q[0];
+      s[i][1] = q[1];
+      s[i][2] = q[2];
+      s[i][3] = q[3];
     }
   }
 

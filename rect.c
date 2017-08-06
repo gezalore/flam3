@@ -250,9 +250,6 @@ static void de_thread(void *dth) {
 
 }
 
-typedef double v4d[4];
-typedef double v8d[8];
-
 static void iter_thread(void *fth) {
    double sub_batch;
    int j;
