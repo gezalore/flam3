@@ -234,7 +234,6 @@ int flam3_create_chaos_distrib(flam3_genome *cp, int xi, unsigned short *xform_d
 static
 int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned short *xform_distrib, randctx *rc) {
   __m256d p;
-  __m256d q;
   __m256d *s = (__m256d *) samples;
   int consec = 0;
   int badvals = 0;
@@ -256,7 +255,6 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
   const int xform_gain = cp->chaos_enable ? CHOOSE_XFORM_GRAIN : 0;
 
   for (int i = -fuse; i < n; i += 1) {
-
     const int fidx = (((unsigned) irand(rc)) & CHOOSE_XFORM_GRAIN_M1)
         + lastfidx;
 
@@ -265,19 +263,15 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
     /* Store the last used transform */
     lastfidx = (fn + 1) * xform_gain;
 
-    q = apply_xform(cp, fn, p, rc, &badvals, 0);
+    p = apply_xform(cp, fn, p, rc, &badvals, 0);
 
-    p = q;
-
-    if (fte) {
-      q = apply_xform(cp, cp->final_xform_index, p, rc, &dummy, 5);
-      /* Keep the opacity from the original xform */
-      q[3] = p[3];
-    }
+    const __m256d q =
+        fte ? apply_xform(cp, cp->final_xform_index, p, rc, &dummy, 5) : p;
 
     /* if fuse over, store it */
     if (i >= 0) {
       s[i] = q;
+      s[i][3] = cp->xform[fn].vis_adjusted;
     }
   }
 

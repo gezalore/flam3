@@ -2245,7 +2245,6 @@ __m256d apply_xform(flam3_genome * const cp, const int fn, const __m256d p,
    s1 = cp->xform[fn].color_speed;
 
   q[2] = s1 * cp->xform[fn].color + (1.0 - s1) * p[2];
-  q[3] = cp->xform[fn].vis_adjusted;
 
    f.tx = cp->xform[fn].c[0][0] * p[0] + cp->xform[fn].c[1][0] * p[1] + cp->xform[fn].c[2][0];
    f.ty = cp->xform[fn].c[0][1] * p[0] + cp->xform[fn].c[1][1] * p[1] + cp->xform[fn].c[2][1];
