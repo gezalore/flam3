@@ -402,11 +402,6 @@ static void iter_thread(void *fth) {
       /* Execute iterations */
       badcount = flam3_iterate(&(fthp->cp), sub_batch_size, fuse, fthp->iter_storage, ficp->xform_distrib, &(fthp->rc));
 
-      #if defined(HAVE_LIBPTHREAD) && defined(USE_LOCKS)
-        /* Lock mutex for access to accumulator */
-        pthread_mutex_lock(&ficp->bucket_mutex);
-      #endif
-
       /* Add the badcount to the counter */
       #if HAVE_GCC_64BIT_ATOMIC_OPS
         double_atomic_add(&ficp->badvals, badcount);
@@ -570,11 +565,6 @@ static void iter_thread(void *fth) {
          b[0][4] += logvis;
       }
 #undef UNROLL
-
-      #if defined(HAVE_LIBPTHREAD) && defined(USE_LOCKS)
-        /* Release mutex */
-        pthread_mutex_unlock(&ficp->bucket_mutex);
-      #endif
 
    }
    #ifdef HAVE_LIBPTHREAD
@@ -929,10 +919,6 @@ static int render_rectangle(flam3_frame *spec, void *out,
          /* Let's make some threads */
          myThreads = (pthread_t *)malloc(spec->nthreads * sizeof(pthread_t));
 
-         #if defined(USE_LOCKS)
-         pthread_mutex_init(&fic.bucket_mutex, NULL);
-         #endif
-
          pthread_attr_init(&pt_attr);
          pthread_attr_setdetachstate(&pt_attr,PTHREAD_CREATE_JOINABLE);
 
@@ -945,10 +931,6 @@ static int render_rectangle(flam3_frame *spec, void *out,
          for (thi=0; thi < spec->nthreads; thi++)
             pthread_join(myThreads[thi], NULL);
 
-         #if defined(USE_LOCKS)
-         pthread_mutex_destroy(&fic.bucket_mutex);
-         #endif
-         
          free(myThreads);
 #else
          for (thi=0; thi < spec->nthreads; thi++)
