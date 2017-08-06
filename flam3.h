@@ -547,14 +547,6 @@ int flam3_create_chaos_distrib(flam3_genome *cp, int xi, unsigned short *xform_d
 int flam3_check_unity_chaos(flam3_genome *cp);
 void clear_cp(flam3_genome *cp, int def_flag);
 
-/* samples is array nsamples*4 long of x,y,color triples.
-   using (samples[0], samples[1]) as starting XY point and
-   (samples[2], samples[3]) as starting color coordinate,
-   perform fuse iterations and throw them away, then perform
-   nsamples iterations and save them in the samples array */
-EXPORT int flam3_iterate(flam3_genome *g, int nsamples, int fuse, double *samples,
-                     unsigned short *xform_distrib, randctx *rc);
-
 void apply_motion_parameters(flam3_xform *xf, flam3_xform *addto, double blend);
 
 /* genomes is array ngenomes long, with times set and in ascending order.
