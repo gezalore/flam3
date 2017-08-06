@@ -460,7 +460,8 @@ static void iter_thread(void *fth) {
             const __m128d v_pp10 = _mm_or_pd(v_pp0, v_pp1);
 
             const __m128d v_pp10d  = _mm_sub_pd(v_pp10, v_ps);
-            const __m128i v_pp10di = _mm_cvtpd_epi32(v_pp10d);
+            const __m128d v_pp10dr  = _mm_round_pd(v_pp10d, (_MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC));
+            const __m128i v_pp10di = _mm_cvtpd_epi32(v_pp10dr);
             const __m128i v_idxt = _mm_mullo_epi32(v_wm, v_pp10di);
             const __m128i v_idx = _mm_hadd_epi32(v_idxt, v_idxt);
             const int idx = _mm_cvtsi128_si32(v_idx);
@@ -484,7 +485,8 @@ static void iter_thread(void *fth) {
              const __m128d v_pp10 = _mm_mul_pd(v_p10m, v_p10);
 
              const __m128d v_pp10d  = _mm_sub_pd(v_pp10, v_ps);
-             const __m128i v_pp10di = _mm_cvtpd_epi32(v_pp10d);
+             const __m128d v_pp10dr  = _mm_round_pd(v_pp10d, (_MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC));
+             const __m128i v_pp10di = _mm_cvtpd_epi32(v_pp10dr);
              const __m128i v_idxt = _mm_mullo_epi32(v_wm, v_pp10di);
              const __m128i v_idx = _mm_hadd_epi32(v_idxt, v_idxt);
              const int idx = _mm_cvtsi128_si32(v_idx);
