@@ -19,6 +19,20 @@
 #include "variations.h"
 #include "interpolation.h" 
 
+typedef __attribute__((aligned(32)))   struct {
+  __m128d precalc_v_sqrt;
+  __m128d precalc_v_sumsq;
+
+  double precalc_atan, precalc_sina; /* Precalculated, if needed */
+  double precalc_cosa;
+  double precalc_atanyx;
+
+  flam3_xform *xform; /* For the important values */
+
+  randctx *rc; /* Pointer to the isaac RNG state */
+} flam3_iter_helper;
+
+
 #define badvalue(x) (((x)!=(x))||((x)>1e10)||((x)<-1e10))
 
 /* Wrap the sincos function for Macs */

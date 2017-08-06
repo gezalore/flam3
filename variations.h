@@ -23,23 +23,6 @@
 
 #include "private.h"
 
-typedef __attribute__((aligned(32)))  struct {
-  __m128d precalc_v_sqrt;
-  __m128d precalc_v_sumsq;
-
-  double precalc_atan, precalc_sina; /* Precalculated, if needed */
-  double precalc_cosa;
-  double precalc_atanyx;
-
-  flam3_xform *xform; /* For the important values */
-
-
-
-  /* Pointer to the isaac RNG state */
-  randctx *rc;
-
-} flam3_iter_helper;
-
 void xform_precalc(flam3_genome *cp, int xi);
 int prepare_precalc_flags(flam3_genome *);
 
