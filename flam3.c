@@ -231,15 +231,13 @@ int flam3_create_chaos_distrib(flam3_genome *cp, int xi, unsigned short *xform_d
  * SAMPLES[0..3].  ignore the first FUSE iterations.
  */
 
+__attribute__((noinline))
 static
 int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned short *xform_distrib, randctx *rc) {
-  __m256d p;
   __m256d *s = (__m256d *) samples;
-  int consec = 0;
+  __m256d p = s[0];
   int badvals = 0;
   int dummy = 0;
-
-  p = s[0];
 
   /* Perform precalculations */
   for (int i = 0; i < cp->num_xforms; i++)
@@ -249,28 +247,44 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
       cp->final_xform_enable != 1
           || cp->xform[cp->final_xform_index].opacity == 1);
 
-  const int fte = cp->final_xform_enable == 1;
+  const int xform_gain = cp->chaos_enable ? CHOOSE_XFORM_GRAIN : 0;
+  const int xform_mask = CHOOSE_XFORM_GRAIN_M1;
 
   int lastfidx = 0;
-  const int xform_gain = cp->chaos_enable ? CHOOSE_XFORM_GRAIN : 0;
 
-  for (int i = -fuse; i < n; i += 1) {
-    const int fidx = (((unsigned) irand(rc)) & CHOOSE_XFORM_GRAIN_M1)
-        + lastfidx;
-
+  for (int i = -fuse; i < 0; i += 1) {
+    const int fidx = (((unsigned) irand(rc)) & xform_mask) + lastfidx;
     const int fn = xform_distrib[fidx];
-
     /* Store the last used transform */
     lastfidx = (fn + 1) * xform_gain;
 
     p = apply_xform(cp, fn, p, rc, &badvals, 0);
+  }
 
-    const __m256d q =
-        fte ? apply_xform(cp, cp->final_xform_index, p, rc, &dummy, 5) : p;
+  const int fte = cp->final_xform_enable == 1;
 
-    /* if fuse over, store it */
-    if (i >= 0) {
-      s[i] = q;
+  if (fte) {
+    for (int i = 0; i < n; i += 1) {
+      const int fidx = (((unsigned) irand(rc)) & xform_mask) + lastfidx;
+      const int fn = xform_distrib[fidx];
+      /* Store the last used transform */
+      lastfidx = (fn + 1) * xform_gain;
+
+      p = apply_xform(cp, fn, p, rc, &badvals, 0);
+
+      s[i] = apply_xform(cp, cp->final_xform_index, p, rc, &dummy, 5),
+      s[i][3] = cp->xform[fn].vis_adjusted;
+    }
+  } else {
+    for (int i = 0; i < n; i += 1) {
+      const int fidx = (((unsigned) irand(rc)) & xform_mask) + lastfidx;
+      const int fn = xform_distrib[fidx];
+      /* Store the last used transform */
+      lastfidx = (fn + 1) * xform_gain;
+
+      p = apply_xform(cp, fn, p, rc, &badvals, 0);
+
+      s[i] = p;
       s[i][3] = cp->xform[fn].vis_adjusted;
     }
   }
