@@ -2358,19 +2358,28 @@ __m256d apply_xform(flam3_genome * const cp, const int fn, const __m256d p,
 
   __m256d q = _mm256_set_pd(q2, q2, q10[1], q10[0]);
 
-  /* Check for badvalues and return randoms if bad */
-  if (badvalue(q[0]) || badvalue(q[1])) {
-    q[0] = flam3_random_isaac_11(rc);
-    q[1] = flam3_random_isaac_11(rc);
-    *badvals += 1;
+  const __m128d v_l = _mm_set1_pd(-1e10);
+  const __m128d v_h = _mm_set1_pd(1e10);
+  const __m128i v_badl = (__m128i ) _mm_cmp_pd(q10, v_l, _CMP_NGE_UQ);
+  const __m128i v_badh = (__m128i ) _mm_cmp_pd(q10, v_h, _CMP_NLE_UQ);
+  const __m128i v_bad = _mm_or_si128(v_badl, v_badh);
+  const int good = _mm_test_all_zeros(v_bad, v_bad);
 
-    consec++;
-    if (consec < 5) {
-      return apply_xform(cp, fn, q, rc, badvals, consec);
-    }
+  if (good)
+    return q;
+
+  *badvals += 1;
+
+  q[0] = flam3_random_isaac_11(rc);
+  q[1] = flam3_random_isaac_11(rc);
+
+  consec++;
+  if (consec < 5) {
+    /* Retry bad values */
+    return apply_xform(cp, fn, q, rc, badvals, consec);
+  } else {
+    return q;
   }
-
-  return q;
 }
 
 void initialize_xforms(flam3_genome *thiscp, int start_here) {
