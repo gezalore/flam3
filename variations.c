@@ -2229,6 +2229,19 @@ int prepare_precalc_flags(flam3_genome *cp) {
    return(0);
 }
 
+static __m128d apply_affine(__m128d p, v2d *c) {
+  const __m128d v_off = _mm_load_pd(c[2]);
+
+  const __m128d v_R0t = _mm_load_pd(c[0]);
+  const __m128d v_R1t = _mm_load_pd(c[1]);
+  const __m128d v_R0 = _mm_unpacklo_pd(v_R0t, v_R1t);
+  const __m128d v_R1 = _mm_unpackhi_pd(v_R0t, v_R1t);
+
+  const __m128d v_p0 = _mm_dp_pd(p, v_R0, 0x31);
+  const __m128d v_p1 = _mm_dp_pd(p, v_R1, 0x32);
+  const __m128d v_p = _mm_or_pd(v_p0, v_p1);
+  return _mm_add_pd(v_p, v_off);
+}
 
 __m256d apply_xform(flam3_genome * const cp, const int fn, const __m256d p,
     randctx * const rc, int * const badvals, int consec)
@@ -2246,10 +2259,10 @@ __m256d apply_xform(flam3_genome * const cp, const int fn, const __m256d p,
 
   q[2] = s1 * cp->xform[fn].color + (1.0 - s1) * p[2];
 
-  f.tx = cp->xform[fn].c[0][0] * p[0] + cp->xform[fn].c[1][0] * p[1]
-      + cp->xform[fn].c[2][0];
-  f.ty = cp->xform[fn].c[0][1] * p[0] + cp->xform[fn].c[1][1] * p[1]
-      + cp->xform[fn].c[2][1];
+  const __m128d t = apply_affine(_mm256_extractf128_pd(p, 0), cp->xform[fn].c);
+
+  f.tx = t[0];
+  f.ty = t[1];
 
   /* Pre-xforms go here, and modify the f.tx and f.ty values */
   if (cp->xform[fn].has_preblur != 0.0)
