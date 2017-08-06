@@ -27,7 +27,7 @@ typedef __attribute__((aligned(32)))   struct {
   double precalc_cosa;
   double precalc_atanyx;
 
-  flam3_xform *xform; /* For the important values */
+  const flam3_xform *xform; /* For the important values */
 
   randctx *rc; /* Pointer to the isaac RNG state */
 } flam3_iter_helper;
@@ -2482,7 +2482,7 @@ int prepare_precalc_flags(flam3_genome *cp) {
    return(0);
 }
 
-static __m128d apply_affine(__m128d p, v2d *c) {
+static __m128d apply_affine(__m128d p, const v2d *c) {
   const __m128d v_off = _mm_load_pd(c[2]);
 
   const __m128d v_R0t = _mm_load_pd(c[0]);
@@ -2496,7 +2496,8 @@ static __m128d apply_affine(__m128d p, v2d *c) {
   return _mm_add_pd(v_p, v_off);
 }
 
-__m128d apply_xform(const flam3_genome * const cp, const int fn,
+__m128d apply_xform(const flam3_genome * const cp,
+    const flam3_xform * const xform,
     const __m128d p,
     randctx * const rc, int * const badvals, int attempts)
 {
@@ -2506,13 +2507,11 @@ __m128d apply_xform(const flam3_genome * const cp, const int fn,
   }
 
   flam3_iter_helper f;
-  int var_n;
 
-  __m128d q10;
-
+  f.xform = xform;
   f.rc = rc;
 
-  const __m128d t = apply_affine(p, cp->xform[fn].c);
+  const __m128d t = apply_affine(p, xform->c);
 
   /* Always calculate sumsq and sqrt */
   __m128d v_t2 = _mm_mul_pd(t, t);
@@ -2523,56 +2522,50 @@ __m128d apply_xform(const flam3_genome * const cp, const int fn,
 
   /* Check to see if we can precalculate any parts */
   /* Precalculate atanxy, sin, cos */
-  if (cp->xform[fn].precalc_atan_xy_flag > 0) {
+  if (xform->precalc_atan_xy_flag > 0) {
     f.precalc_atan = atan2(t[0], t[1]);
   }
 
-  if (cp->xform[fn].precalc_angles_flag > 0) {
+  if (xform->precalc_angles_flag > 0) {
     f.precalc_sina = t[0] / f.precalc_v_sqrt[0];
     f.precalc_cosa = t[1] / f.precalc_v_sqrt[0];
   }
 
   /* Precalc atanyx */
-  if (cp->xform[fn].precalc_atan_yx_flag > 0) {
+  if (xform->precalc_atan_yx_flag > 0) {
     f.precalc_atanyx = atan2(t[1], t[0]);
   }
 
-  f.xform = &(cp->xform[fn]);
+  __m128d v_q = _mm_setzero_pd();
 
-  __m128d v_p = _mm_setzero_pd();
-
-  for (var_n = 0; var_n < cp->xform[fn].num_active_vars; var_n++) {
-    const double weight = cp->xform[fn].active_var_weights[var_n];
-    varFuncPtr varFunc = (varFuncPtr) (cp->xform[fn].varFunc[var_n]);
-    const __m128d v_dp = varFunc(t, weight, &f);
-    v_p = _mm_add_pd(v_p, v_dp);
+  for (int n = 0; n < xform->num_active_vars; n++) {
+    const double weight = xform->active_var_weights[n];
+    varFuncPtr varFunc = (varFuncPtr) (xform->varFunc[n]);
+    const __m128d v_dq = varFunc(t, weight, &f);
+    v_q = _mm_add_pd(v_q, v_dq);
   }
 
   /* apply the post transform */
-  if (cp->xform[fn].has_post) {
-    q10 = apply_affine(v_p, cp->xform[fn].post);
-  } else {
-    q10 = v_p;
+  if (xform->has_post) {
+    v_q = apply_affine(v_q, xform->post);
   }
-
-  __m128d q = q10;
 
   const __m128d v_l = _mm_set1_pd(-1e10);
   const __m128d v_h = _mm_set1_pd(1e10);
-  const __m128i v_badl = (__m128i ) _mm_cmp_pd(q10, v_l, _CMP_NGE_UQ);
-  const __m128i v_badh = (__m128i ) _mm_cmp_pd(q10, v_h, _CMP_NLE_UQ);
+  const __m128i v_badl = (__m128i ) _mm_cmp_pd(v_q, v_l, _CMP_NGE_UQ);
+  const __m128i v_badh = (__m128i ) _mm_cmp_pd(v_q, v_h, _CMP_NLE_UQ);
   const __m128i v_bad = _mm_or_si128(v_badl, v_badh);
   const int good = _mm_test_all_zeros(v_bad, v_bad);
 
   if (good)
-    return q;
+    return v_q;
 
   *badvals += 1;
 
   /* Retry bad values */
-  q[0] = flam3_random_isaac_11(rc);
-  q[1] = flam3_random_isaac_11(rc);
-  return apply_xform(cp, fn, q, rc, badvals, attempts - 1);
+  v_q[0] = flam3_random_isaac_11(rc);
+  v_q[1] = flam3_random_isaac_11(rc);
+  return apply_xform(cp, xform, v_q, rc, badvals, attempts - 1);
 }
 
 void initialize_xforms(flam3_genome *thiscp, int start_here) {

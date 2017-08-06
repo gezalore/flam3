@@ -275,7 +275,7 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
 
     c = color_weight[fn] * c + color_offset[fn];
 
-    p = apply_xform(cp, fn, p, rc, &badvals, 5);
+    p = apply_xform(cp, &xform[fn], p, rc, &badvals, 5);
   }
 
   const int fte = cp->final_xform_enable == 1;
@@ -287,11 +287,12 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
       /* Store the last used transform */
       lastfidx = (fn + 1) * xform_gain;
 
-      p = apply_xform(cp, fn, p, rc, &badvals, 5);
+      p = apply_xform(cp, &xform[fn], p, rc, &badvals, 5);
 
       c = color_weight[fn] * c + color_offset[fn];
 
-      const __m128d pp = apply_xform(cp, cp->final_xform_index, p, rc, &dummy,
+      const __m128d pp = apply_xform(cp, &xform[cp->final_xform_index], p, rc,
+          &dummy,
           1);
 
       s[i] = _mm256_set_pd(logvis[fn], c, pp[1], pp[0]);
@@ -303,7 +304,7 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
       /* Store the last used transform */
       lastfidx = (fn + 1) * xform_gain;
 
-      p = apply_xform(cp, fn, p, rc, &badvals, 5);
+      p = apply_xform(cp, &xform[fn], p, rc, &badvals, 5);
 
       c = color_weight[fn] * c + color_offset[fn];
 
@@ -314,7 +315,7 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
       const int fidx = ((unsigned) irand(rc)) & xform_mask;
       const int fn = xform_distrib[fidx];
 
-      p = apply_xform(cp, fn, p, rc, &badvals, 5);
+      p = apply_xform(cp, &xform[fn], p, rc, &badvals, 5);
 
       c = color_weight[fn] * c + color_offset[fn];
 
@@ -363,7 +364,7 @@ int flam3_xform_preview(flam3_genome *cp, int xi, double range, int numvals, int
          
          /* Loop over the depth */
       for (dd = 0; dd < depth; dd++) {
-        p = apply_xform(cp, xi, p, rc, &dummy, 1);
+        p = apply_xform(cp, &cp->xform[xi], p, rc, &dummy, 1);
       }
 
          result[outi] = p[0];
