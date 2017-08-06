@@ -169,10 +169,17 @@ static void var2_spherical(flam3_iter_helper *f, double weight) {
       p[0] += v * nx;
       p[1] += v * ny; */
 
-  double r2 = weight / (f->precalc_v_sumsq[0] + EPS);
+//  double r2 = weight / (f->precalc_v_sumsq[0] + EPS);
+//
+//  f->p[0] += r2 * f->t[0];
+//  f->p[1] += r2 * f->t[1];
 
-  f->p[0] += r2 * f->t[0];
-  f->p[1] += r2 * f->t[1];
+  const __m128d v_w = _mm_set1_pd(weight);
+  const __m128d v_EPS = _mm_set1_pd(EPS);
+  const __m128d v_den = _mm_add_pd(f->precalc_v_sumsq, v_EPS);
+  const __m128d v_r2 = _mm_div_pd(v_w, v_den);
+  const __m128d v_dp = _mm_mul_pd(v_r2, f->t);
+  f->p = _mm_add_pd(f->p, v_dp);
 }
 
 static void var3_swirl(flam3_iter_helper *f, double weight) {
