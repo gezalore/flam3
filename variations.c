@@ -2230,20 +2230,22 @@ int prepare_precalc_flags(flam3_genome *cp) {
 }
 
 
-void apply_xform(flam3_genome *cp, int fn, const __m256d p, __m256d *q,
-    randctx *rc, int *bad)
+__m256d apply_xform(flam3_genome *cp, int fn, const __m256d p, randctx *rc,
+    int *bad)
 {
    flam3_iter_helper f;
    int var_n;
    double s1;
    double weight;
 
+  __m256d q;
+
    f.rc = rc;
 
    s1 = cp->xform[fn].color_speed;
 
-  q[0][2] = s1 * cp->xform[fn].color + (1.0 - s1) * p[2];
-  q[0][3] = cp->xform[fn].vis_adjusted;
+  q[2] = s1 * cp->xform[fn].color + (1.0 - s1) * p[2];
+  q[3] = cp->xform[fn].vis_adjusted;
 
    f.tx = cp->xform[fn].c[0][0] * p[0] + cp->xform[fn].c[1][0] * p[1] + cp->xform[fn].c[2][0];
    f.ty = cp->xform[fn].c[0][1] * p[0] + cp->xform[fn].c[1][1] * p[1] + cp->xform[fn].c[2][1];
@@ -2285,23 +2287,24 @@ void apply_xform(flam3_genome *cp, int fn, const __m256d p, __m256d *q,
 
    /* apply the post transform */
    if (cp->xform[fn].has_post) {
-    q[0][0] = cp->xform[fn].post[0][0] * f.p0 + cp->xform[fn].post[1][0] * f.p1
+    q[0] = cp->xform[fn].post[0][0] * f.p0 + cp->xform[fn].post[1][0] * f.p1
         + cp->xform[fn].post[2][0];
-    q[0][1] = cp->xform[fn].post[0][1] * f.p0 + cp->xform[fn].post[1][1] * f.p1
+    q[1] = cp->xform[fn].post[0][1] * f.p0 + cp->xform[fn].post[1][1] * f.p1
         + cp->xform[fn].post[2][1];
    } else {
-    q[0][0] = f.p0;
-    q[0][1] = f.p1;
+    q[0] = f.p0;
+    q[1] = f.p1;
    }
 
    /* Check for badvalues and return randoms if bad */
-  if (badvalue(q[0][0]) || badvalue(q[0][1])) {
-    q[0][0] = flam3_random_isaac_11(rc);
-    q[0][1] = flam3_random_isaac_11(rc);
+  if (badvalue(q[0]) || badvalue(q[1])) {
+    q[0] = flam3_random_isaac_11(rc);
+    q[1] = flam3_random_isaac_11(rc);
     *bad = 1;
    } else
     *bad = 0;
 
+  return q;
 }
 
 void initialize_xforms(flam3_genome *thiscp, int start_here) {

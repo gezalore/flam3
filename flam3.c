@@ -268,7 +268,7 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
     lastfidx = (fn + 1) * xform_gain;
 
     int bad;
-    apply_xform(cp, fn, p, &q, rc, &bad);
+    q = apply_xform(cp, fn, p, rc, &bad);
     if (bad) {
       consec++;
       badvals++;
@@ -292,7 +292,7 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
     p[3] = q[3];
 
     if (fte) {
-      apply_xform(cp, cp->final_xform_index, p, &q, rc, &bad);
+      q = apply_xform(cp, cp->final_xform_index, p, rc, &bad);
       /* Keep the opacity from the original xform */
       q[3] = p[3];
     }
@@ -346,8 +346,9 @@ int flam3_xform_preview(flam3_genome *cp, int xi, double range, int numvals, int
          p[1] = (double)yy * incr;
          
          /* Loop over the depth */
-         for (dd=0;dd<depth;dd++)
-        apply_xform(cp, xi, p, &p, rc, &bad);
+      for (dd = 0; dd < depth; dd++) {
+        p = apply_xform(cp, xi, p, rc, &bad);
+      }
 
          result[outi] = p[0];
          result[outi+1] = p[1];
