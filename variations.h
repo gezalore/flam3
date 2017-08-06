@@ -28,9 +28,12 @@ typedef __attribute__((aligned(32)))  struct {
   __m128d t; /* Starting coordinates */
   __m128d p; /* Output coordinates */
 
+  __m128d precalc_v_sqrt;
+  __m128d precalc_v_sumsq;
+
   double precalc_atan, precalc_sina; /* Precalculated, if needed */
-  double precalc_cosa, precalc_sqrt;
-  double precalc_sumsq, precalc_atanyx;
+  double precalc_cosa;
+  double precalc_atanyx;
 
   flam3_xform *xform; /* For the important values */
 
