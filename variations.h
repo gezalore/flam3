@@ -26,7 +26,7 @@
 void xform_precalc(flam3_genome *cp, int xi);
 int prepare_precalc_flags(flam3_genome *);
 
-__m256d apply_xform(flam3_genome *cp, int fn, const __m256d p, randctx *rc,
+__m128d apply_xform(flam3_genome *cp, int fn, const __m128d p, randctx *rc,
     int *bad, int consec);
 void initialize_xforms(flam3_genome *thiscp, int start_here);
 #endif

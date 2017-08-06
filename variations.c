@@ -2496,7 +2496,7 @@ static __m128d apply_affine(__m128d p, v2d *c) {
   return _mm_add_pd(v_p, v_off);
 }
 
-__m256d apply_xform(flam3_genome * const cp, const int fn, const __m256d p,
+__m128d apply_xform(flam3_genome * const cp, const int fn, const __m128d p,
     randctx * const rc, int * const badvals, int attempts)
 {
   /* Return if ran out of attempts */
@@ -2511,11 +2511,7 @@ __m256d apply_xform(flam3_genome * const cp, const int fn, const __m256d p,
 
   f.rc = rc;
 
-  const double s1 = cp->xform[fn].color_speed;
-
-  const double q2 = s1 * cp->xform[fn].color + (1.0 - s1) * p[2];
-
-  const __m128d t = apply_affine(_mm256_extractf128_pd(p, 0), cp->xform[fn].c);
+  const __m128d t = apply_affine(p, cp->xform[fn].c);
 
   /* Always calculate sumsq and sqrt */
   __m128d v_t2 = _mm_mul_pd(t, t);
@@ -2558,7 +2554,7 @@ __m256d apply_xform(flam3_genome * const cp, const int fn, const __m256d p,
     q10 = v_p;
   }
 
-  __m256d q = _mm256_set_pd(q2, q2, q10[1], q10[0]);
+  __m128d q = q10;
 
   const __m128d v_l = _mm_set1_pd(-1e10);
   const __m128d v_h = _mm_set1_pd(1e10);

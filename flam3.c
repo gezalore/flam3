@@ -235,7 +235,8 @@ __attribute__((noinline))
 static
 int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned short *xform_distrib, randctx *rc) {
   __m256d *s = (__m256d *) samples;
-  __m256d p = s[0];
+  __m128d p = _mm_set_pd(s[0][1], s[0][0]);
+  double c = s[0][2];
   int badvals = 0;
   int dummy = 0;
 
@@ -272,7 +273,15 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
 
       p = apply_xform(cp, fn, p, rc, &badvals, 5);
 
-      s[i] = apply_xform(cp, cp->final_xform_index, p, rc, &dummy, 1),
+      const double s1 = cp->xform[fn].color_speed;
+      c = s1 * cp->xform[fn].color + (1.0 - s1) * c;
+
+      const __m128d pp = apply_xform(cp, cp->final_xform_index, p, rc, &dummy,
+          1);
+
+      s[i][0] = pp[0];
+      s[i][1] = pp[1];
+      s[i][2] = c;
       s[i][3] = cp->xform[fn].vis_adjusted;
     }
   } else if (xform_gain) {
@@ -284,7 +293,12 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
 
       p = apply_xform(cp, fn, p, rc, &badvals, 5);
 
-      s[i] = p;
+      const double s1 = cp->xform[fn].color_speed;
+      c = s1 * cp->xform[fn].color + (1.0 - s1) * c;
+
+      s[i][0] = p[0];
+      s[i][1] = p[1];
+      s[i][2] = c;
       s[i][3] = cp->xform[fn].vis_adjusted;
     }
   } else {
@@ -294,7 +308,12 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
 
       p = apply_xform(cp, fn, p, rc, &badvals, 5);
 
-      s[i] = p;
+      const double s1 = cp->xform[fn].color_speed;
+      c = s1 * cp->xform[fn].color + (1.0 - s1) * c;
+
+      s[i][0] = p[0];
+      s[i][1] = p[1];
+      s[i][2] = c;
       s[i][3] = cp->xform[fn].vis_adjusted;
     }
   }
@@ -306,7 +325,7 @@ int flam3_xform_preview(flam3_genome *cp, int xi, double range, int numvals, int
 
    /* We will evaluate the 'xi'th xform 'depth' times, over the following values:           */
    /* x in [-range : range], y in [-range : range], with 2* (2*numvals+1)^2 values returned */ 
-   __m256d p;
+  __m128d p;
    double incr;
    int outi;
    int xx,yy,dd;
