@@ -267,7 +267,9 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
     /* Store the last used transform */
     lastfidx = (fn + 1) * xform_gain;
 
-    if (apply_xform(cp, fn, p, &q, rc) > 0) {
+    int bad;
+    apply_xform(cp, fn, p, &q, rc, &bad);
+    if (bad) {
       consec++;
       badvals++;
       if (consec < 5) {
@@ -290,7 +292,7 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
     p[3] = q[3];
 
     if (fte) {
-      apply_xform(cp, cp->final_xform_index, p, &q, rc);
+      apply_xform(cp, cp->final_xform_index, p, &q, rc, &bad);
       /* Keep the opacity from the original xform */
       q[3] = p[3];
     }
@@ -337,14 +339,15 @@ int flam3_xform_preview(flam3_genome *cp, int xi, double range, int numvals, int
    /* Loop over the grid */
    for (xx=-numvals;xx<=numvals;xx++) {
       for (yy=-numvals;yy<=numvals;yy++) {
-      
+      int bad;
+
          /* Calculate the input coordinates */
          p[0] = (double)xx * incr;
          p[1] = (double)yy * incr;
          
          /* Loop over the depth */
          for (dd=0;dd<depth;dd++)
-        apply_xform(cp, xi, p, &p, rc);
+        apply_xform(cp, xi, p, &p, rc, &bad);
 
          result[outi] = p[0];
          result[outi+1] = p[1];

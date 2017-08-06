@@ -2230,8 +2230,8 @@ int prepare_precalc_flags(flam3_genome *cp) {
 }
 
 
-int apply_xform(flam3_genome *cp, int fn, const __m256d p, __m256d *q,
-    randctx *rc)
+void apply_xform(flam3_genome *cp, int fn, const __m256d p, __m256d *q,
+    randctx *rc, int *bad)
 {
    flam3_iter_helper f;
    int var_n;
@@ -2298,9 +2298,9 @@ int apply_xform(flam3_genome *cp, int fn, const __m256d p, __m256d *q,
   if (badvalue(q[0][0]) || badvalue(q[0][1])) {
     q[0][0] = flam3_random_isaac_11(rc);
     q[0][1] = flam3_random_isaac_11(rc);
-      return(1);
+    *bad = 1;
    } else
-      return(0);
+    *bad = 0;
 
 }
 
