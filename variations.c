@@ -2316,10 +2316,8 @@ __m256d apply_xform(flam3_genome * const cp, const int fn, const __m256d p,
 
   const __m128d t = apply_affine(_mm256_extractf128_pd(p, 0), cp->xform[fn].c);
 
-  f.t = t;
-
   /* Always calculate sumsq and sqrt */
-  __m128d v_t2 = _mm_mul_pd(f.t, f.t);
+  __m128d v_t2 = _mm_mul_pd(t, t);
   __m128d v_r2 = _mm_hadd_pd(v_t2, v_t2);
   __m128d v_r = _mm_sqrt_pd(v_r2);
   f.precalc_v_sumsq = v_r2;
@@ -2328,19 +2326,20 @@ __m256d apply_xform(flam3_genome * const cp, const int fn, const __m256d p,
   /* Check to see if we can precalculate any parts */
   /* Precalculate atanxy, sin, cos */
   if (cp->xform[fn].precalc_atan_xy_flag > 0) {
-    f.precalc_atan = atan2(f.t[0], f.t[1]);
+    f.precalc_atan = atan2(t[0], t[1]);
   }
 
   if (cp->xform[fn].precalc_angles_flag > 0) {
-    f.precalc_sina = f.t[0] / f.precalc_v_sqrt[0];
-    f.precalc_cosa = f.t[1] / f.precalc_v_sqrt[0];
+    f.precalc_sina = t[0] / f.precalc_v_sqrt[0];
+    f.precalc_cosa = t[1] / f.precalc_v_sqrt[0];
   }
 
   /* Precalc atanyx */
   if (cp->xform[fn].precalc_atan_yx_flag > 0) {
-    f.precalc_atanyx = atan2(f.t[1], f.t[0]);
+    f.precalc_atanyx = atan2(t[1], t[0]);
   }
 
+  f.t = t;
   f.p = _mm_setzero_pd();
   f.xform = &(cp->xform[fn]);
 
