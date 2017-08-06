@@ -2481,6 +2481,7 @@ static int prepare_precalc_flags(flam3_genome *cp) {
          }
       }
 
+    assert(totnum > 0);
       cp->xform[i].num_active_vars = totnum;
 
    }
@@ -2512,13 +2513,14 @@ static __m128d apply_xform(const flam3_genome * const cp,
   f.rc = rc;
 
   __m128d v_q = p;
+
   do {
     const __m128d t = apply_affine(v_q, xform->c);
 
     /* Always calculate sumsq and sqrt */
-    __m128d v_t2 = _mm_mul_pd(t, t);
-    __m128d v_r2 = _mm_hadd_pd(v_t2, v_t2);
-    __m128d v_r = _mm_sqrt_pd(v_r2);
+    const __m128d v_t2 = _mm_mul_pd(t, t);
+    const __m128d v_r2 = _mm_hadd_pd(v_t2, v_t2);
+    const __m128d v_r = _mm_sqrt_pd(v_r2);
     f.precalc_v_sumsq = v_r2;
     f.precalc_v_sqrt = v_r;
 
@@ -2544,7 +2546,7 @@ static __m128d apply_xform(const flam3_genome * const cp,
 
     for (int n = 0; n < xform->num_active_vars; n++) {
       const double weight = xform->active_var_weights[n];
-      varFuncPtr varFunc = (varFuncPtr) (xform->varFunc[n]);
+      const varFuncPtr varFunc = (varFuncPtr) (xform->varFunc[n]);
       const __m128d v_dq = varFunc(t, weight, &f);
       v_q = _mm_add_pd(v_q, v_dq);
     }
