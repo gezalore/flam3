@@ -2544,9 +2544,11 @@ static __m128d apply_xform(const flam3_genome * const cp,
       }
     }
 
-    v_q = _mm_setzero_pd();
+    const double weight = xform->active_var_weights[0];
+    const varFuncPtr varFunc = (varFuncPtr) (xform->varFunc[0]);
+    v_q = varFunc(t, weight, &f);
 
-    for (int n = 0; n < xform->num_active_vars; n++) {
+    for (int n = 1; n < xform->num_active_vars; n++) {
       const double weight = xform->active_var_weights[n];
       const varFuncPtr varFunc = (varFuncPtr) (xform->varFunc[n]);
       const __m128d v_dq = varFunc(t, weight, &f);
