@@ -2503,77 +2503,76 @@ static __m128d apply_affine(__m128d p, const v2d *c) {
 }
 
 static __m128d apply_xform(const flam3_genome * const cp,
-    const flam3_xform * const xform,
-    const __m128d p,
-    randctx * const rc, int * const badvals, int attempts)
+    const flam3_xform * const xform, __m128d p, randctx * const rc,
+    int * const badvals, int attempts)
 {
-  /* Return if ran out of attempts */
-  if (__builtin_expect(attempts == 0, 0)) {
-    return p;
-  }
-
   flam3_iter_helper f;
 
   f.xform = xform;
   f.rc = rc;
 
-  const __m128d t = apply_affine(p, xform->c);
+  __m128d v_q = p;
+  do {
+    const __m128d t = apply_affine(v_q, xform->c);
 
-  /* Always calculate sumsq and sqrt */
-  __m128d v_t2 = _mm_mul_pd(t, t);
-  __m128d v_r2 = _mm_hadd_pd(v_t2, v_t2);
-  __m128d v_r = _mm_sqrt_pd(v_r2);
-  f.precalc_v_sumsq = v_r2;
-  f.precalc_v_sqrt = v_r;
+    /* Always calculate sumsq and sqrt */
+    __m128d v_t2 = _mm_mul_pd(t, t);
+    __m128d v_r2 = _mm_hadd_pd(v_t2, v_t2);
+    __m128d v_r = _mm_sqrt_pd(v_r2);
+    f.precalc_v_sumsq = v_r2;
+    f.precalc_v_sqrt = v_r;
 
-  /* Check to see if we can precalculate any parts */
-  if (xform->precalc_any_flag) {
-    /* Precalculate atanxy, sin, cos */
-    if (xform->precalc_atan_xy_flag > 0) {
-      f.precalc_atan = atan2(t[0], t[1]);
+    /* Check to see if we can precalculate any parts */
+    if (xform->precalc_any_flag) {
+      /* Precalculate atanxy, sin, cos */
+      if (xform->precalc_atan_xy_flag > 0) {
+        f.precalc_atan = atan2(t[0], t[1]);
+      }
+
+      if (xform->precalc_angles_flag > 0) {
+        f.precalc_sina = t[0] / f.precalc_v_sqrt[0];
+        f.precalc_cosa = t[1] / f.precalc_v_sqrt[0];
+      }
+
+      /* Precalc atanyx */
+      if (xform->precalc_atan_yx_flag > 0) {
+        f.precalc_atanyx = atan2(t[1], t[0]);
+      }
     }
 
-    if (xform->precalc_angles_flag > 0) {
-      f.precalc_sina = t[0] / f.precalc_v_sqrt[0];
-      f.precalc_cosa = t[1] / f.precalc_v_sqrt[0];
+    v_q = _mm_setzero_pd();
+
+    for (int n = 0; n < xform->num_active_vars; n++) {
+      const double weight = xform->active_var_weights[n];
+      varFuncPtr varFunc = (varFuncPtr) (xform->varFunc[n]);
+      const __m128d v_dq = varFunc(t, weight, &f);
+      v_q = _mm_add_pd(v_q, v_dq);
     }
 
-    /* Precalc atanyx */
-    if (xform->precalc_atan_yx_flag > 0) {
-      f.precalc_atanyx = atan2(t[1], t[0]);
+    /* apply the post transform */
+    if (xform->has_post) {
+      v_q = apply_affine(v_q, xform->post);
     }
-  }
 
-  __m128d v_q = _mm_setzero_pd();
+    const __m128d v_l = _mm_set1_pd(-1e10);
+    const __m128d v_h = _mm_set1_pd(1e10);
+    const __m128i v_badl = (__m128i ) _mm_cmp_pd(v_q, v_l, _CMP_NGE_UQ);
+    const __m128i v_badh = (__m128i ) _mm_cmp_pd(v_q, v_h, _CMP_NLE_UQ);
+    const __m128i v_bad = _mm_or_si128(v_badl, v_badh);
+    const int good = _mm_test_all_zeros(v_bad, v_bad);
 
-  for (int n = 0; n < xform->num_active_vars; n++) {
-    const double weight = xform->active_var_weights[n];
-    varFuncPtr varFunc = (varFuncPtr) (xform->varFunc[n]);
-    const __m128d v_dq = varFunc(t, weight, &f);
-    v_q = _mm_add_pd(v_q, v_dq);
-  }
+    if (good)
+      return v_q;
 
-  /* apply the post transform */
-  if (xform->has_post) {
-    v_q = apply_affine(v_q, xform->post);
-  }
+    *badvals += 1;
 
-  const __m128d v_l = _mm_set1_pd(-1e10);
-  const __m128d v_h = _mm_set1_pd(1e10);
-  const __m128i v_badl = (__m128i ) _mm_cmp_pd(v_q, v_l, _CMP_NGE_UQ);
-  const __m128i v_badh = (__m128i ) _mm_cmp_pd(v_q, v_h, _CMP_NLE_UQ);
-  const __m128i v_bad = _mm_or_si128(v_badl, v_badh);
-  const int good = _mm_test_all_zeros(v_bad, v_bad);
+    /* Retry bad values */
+    v_q[0] = flam3_random_isaac_11(rc);
+    v_q[1] = flam3_random_isaac_11(rc);
+    attempts--;
+  } while (attempts);
 
-  if (good)
-    return v_q;
-
-  *badvals += 1;
-
-  /* Retry bad values */
-  v_q[0] = flam3_random_isaac_11(rc);
-  v_q[1] = flam3_random_isaac_11(rc);
-  return apply_xform(cp, xform, v_q, rc, badvals, attempts - 1);
+  return v_q;
 }
 
 static void initialize_xforms(flam3_genome *thiscp, int start_here) {
