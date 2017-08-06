@@ -232,7 +232,8 @@ int flam3_create_chaos_distrib(flam3_genome *cp, int xi, unsigned short *xform_d
  * SAMPLES[0..3].  ignore the first FUSE iterations.
  */
 
-__attribute__((noinline))
+__attribute__((always_inline))
+inline
 static
 int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned short *xform_distrib, randctx *rc) {
   __m256d *s = (__m256d *) samples;
