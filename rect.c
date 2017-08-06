@@ -1025,10 +1025,10 @@ static int render_rectangle(flam3_frame *spec, void *out,
                c[2] *= ls;
                c[3] *= ls;
 
-               abump_no_overflow(a[0][0], c[0]);
-               abump_no_overflow(a[0][1], c[1]);
-               abump_no_overflow(a[0][2], c[2]);
-               abump_no_overflow(a[0][3], c[3]);
+               a[0][0] += c[0];
+               a[0][1] += c[1];
+               a[0][2] += c[2];
+               a[0][3] += c[3];
             }
          }
       } else {
