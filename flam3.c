@@ -259,10 +259,12 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
   assert(cp->num_xforms <= 64);
   double color_offset[64];
   double color_weight[64];
+  double logvis[64];
 
   for (int i = 0; i < cp->num_xforms; i++) {
     color_offset[i] = xform[i].color_speed * xform[i].color;
     color_weight[i] = 1.0 - xform[i].color_speed;
+    logvis[i] = xform[i].vis_adjusted;
   }
 
   for (int i = -fuse; i < 0; i += 1) {
@@ -292,7 +294,7 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
       const __m128d pp = apply_xform(cp, cp->final_xform_index, p, rc, &dummy,
           1);
 
-      s[i] = _mm256_set_pd(xform[fn].vis_adjusted, c, pp[1], pp[0]);
+      s[i] = _mm256_set_pd(logvis[fn], c, pp[1], pp[0]);
     }
   } else if (xform_gain) {
     for (int i = 0; i < n; i += 1) {
@@ -305,7 +307,7 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
 
       c = color_weight[fn] * c + color_offset[fn];
 
-      s[i] = _mm256_set_pd(xform[fn].vis_adjusted, c, p[1], p[0]);
+      s[i] = _mm256_set_pd(logvis[fn], c, p[1], p[0]);
     }
   } else {
     for (int i = 0; i < n; i += 1) {
@@ -316,7 +318,7 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
 
       c = color_weight[fn] * c + color_offset[fn];
 
-      s[i] = _mm256_set_pd(xform[fn].vis_adjusted, c, p[1], p[0]);
+      s[i] = _mm256_set_pd(logvis[fn], c, p[1], p[0]);
     }
   }
 
