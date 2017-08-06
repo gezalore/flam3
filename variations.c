@@ -2301,8 +2301,13 @@ static __m128d apply_affine(__m128d p, v2d *c) {
 }
 
 __m256d apply_xform(flam3_genome * const cp, const int fn, const __m256d p,
-    randctx * const rc, int * const badvals, int consec)
+    randctx * const rc, int * const badvals, int attempts)
 {
+  /* Return if ran out of attempts */
+  if (__builtin_expect(attempts == 0, 0)) {
+    return p;
+  }
+
   flam3_iter_helper f;
   int var_n;
 
@@ -2370,16 +2375,10 @@ __m256d apply_xform(flam3_genome * const cp, const int fn, const __m256d p,
 
   *badvals += 1;
 
+  /* Retry bad values */
   q[0] = flam3_random_isaac_11(rc);
   q[1] = flam3_random_isaac_11(rc);
-
-  consec++;
-  if (consec < 5) {
-    /* Retry bad values */
-    return apply_xform(cp, fn, q, rc, badvals, consec);
-  } else {
-    return q;
-  }
+  return apply_xform(cp, fn, q, rc, badvals, attempts - 1);
 }
 
 void initialize_xforms(flam3_genome *thiscp, int start_here) {
