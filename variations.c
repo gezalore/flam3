@@ -2301,18 +2301,18 @@ __m256d apply_xform(flam3_genome * const cp, const int fn, const __m256d p,
   double s1;
   double weight;
 
-  __m256d q;
+  __m128d q10;
+  double q2;
 
   f.rc = rc;
 
   s1 = cp->xform[fn].color_speed;
 
-  q[2] = s1 * cp->xform[fn].color + (1.0 - s1) * p[2];
+  q2 = s1 * cp->xform[fn].color + (1.0 - s1) * p[2];
 
   const __m128d t = apply_affine(_mm256_extractf128_pd(p, 0), cp->xform[fn].c);
 
-  f.t[0] = t[0];
-  f.t[1] = t[1];
+  f.t = t;
 
   /* Always calculate sumsq and sqrt */
   __m128d v_t2 = _mm_mul_pd(f.t, f.t);
@@ -2341,7 +2341,6 @@ __m256d apply_xform(flam3_genome * const cp, const int fn, const __m256d p,
   f.p[1] = 0.0;
   f.xform = &(cp->xform[fn]);
 
-
   for (var_n = 0; var_n < cp->xform[fn].num_active_vars; var_n++) {
     weight = cp->xform[fn].active_var_weights[var_n];
     varFuncPtr varFunc = (varFuncPtr) (cp->xform[fn].varFunc[var_n]);
@@ -2350,14 +2349,12 @@ __m256d apply_xform(flam3_genome * const cp, const int fn, const __m256d p,
 
   /* apply the post transform */
   if (cp->xform[fn].has_post) {
-    q[0] = cp->xform[fn].post[0][0] * f.p[0] + cp->xform[fn].post[1][0] * f.p[1]
-        + cp->xform[fn].post[2][0];
-    q[1] = cp->xform[fn].post[0][1] * f.p[0] + cp->xform[fn].post[1][1] * f.p[1]
-        + cp->xform[fn].post[2][1];
+    q10 = apply_affine(f.p, cp->xform[fn].post);
   } else {
-    q[0] = f.p[0];
-    q[1] = f.p[1];
+    q10 = f.p;
   }
+
+  __m256d q = _mm256_set_pd(q2, q2, q10[1], q10[0]);
 
   /* Check for badvalues and return randoms if bad */
   if (badvalue(q[0]) || badvalue(q[1])) {
