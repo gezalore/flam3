@@ -2305,17 +2305,14 @@ __m256d apply_xform(flam3_genome * const cp, const int fn, const __m256d p,
 {
   flam3_iter_helper f;
   int var_n;
-  double s1;
-  double weight;
 
   __m128d q10;
-  double q2;
 
   f.rc = rc;
 
-  s1 = cp->xform[fn].color_speed;
+  const double s1 = cp->xform[fn].color_speed;
 
-  q2 = s1 * cp->xform[fn].color + (1.0 - s1) * p[2];
+  const double q2 = s1 * cp->xform[fn].color + (1.0 - s1) * p[2];
 
   const __m128d t = apply_affine(_mm256_extractf128_pd(p, 0), cp->xform[fn].c);
 
@@ -2344,12 +2341,11 @@ __m256d apply_xform(flam3_genome * const cp, const int fn, const __m256d p,
     f.precalc_atanyx = atan2(f.t[1], f.t[0]);
   }
 
-  f.p[0] = 0.0;
-  f.p[1] = 0.0;
+  f.p = _mm_setzero_pd();
   f.xform = &(cp->xform[fn]);
 
   for (var_n = 0; var_n < cp->xform[fn].num_active_vars; var_n++) {
-    weight = cp->xform[fn].active_var_weights[var_n];
+    const double weight = cp->xform[fn].active_var_weights[var_n];
     varFuncPtr varFunc = (varFuncPtr) (cp->xform[fn].varFunc[var_n]);
     varFunc(&f, weight);
   }
