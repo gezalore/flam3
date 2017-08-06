@@ -233,8 +233,8 @@ int flam3_create_chaos_distrib(flam3_genome *cp, int xi, unsigned short *xform_d
 
 static
 int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned short *xform_distrib, randctx *rc) {
-  v4d p;
-  v4d q;
+  __m256d p;
+  __m256d q;
   int consec = 0;
   int badvals = 0;
   v4d *s = (v4d*) samples;
@@ -267,7 +267,7 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
     /* Store the last used transform */
     lastfidx = (fn + 1) * xform_gain;
 
-    if (apply_xform(cp, fn, p, q, rc) > 0) {
+    if (apply_xform(cp, fn, p, &q, rc) > 0) {
       consec++;
       badvals++;
       if (consec < 5) {
@@ -290,7 +290,7 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
     p[3] = q[3];
 
     if (fte) {
-      apply_xform(cp, cp->final_xform_index, p, q, rc);
+      apply_xform(cp, cp->final_xform_index, p, &q, rc);
       /* Keep the opacity from the original xform */
       q[3] = p[3];
     }
@@ -311,7 +311,7 @@ int flam3_xform_preview(flam3_genome *cp, int xi, double range, int numvals, int
 
    /* We will evaluate the 'xi'th xform 'depth' times, over the following values:           */
    /* x in [-range : range], y in [-range : range], with 2* (2*numvals+1)^2 values returned */ 
-   double p[4];
+   __m256d p;
    double incr;
    int outi;
    int xx,yy,dd;
@@ -344,8 +344,8 @@ int flam3_xform_preview(flam3_genome *cp, int xi, double range, int numvals, int
          
          /* Loop over the depth */
          for (dd=0;dd<depth;dd++)
-            apply_xform(cp, xi, p, p, rc);
-         
+        apply_xform(cp, xi, p, &p, rc);
+
          result[outi] = p[0];
          result[outi+1] = p[1];
          
