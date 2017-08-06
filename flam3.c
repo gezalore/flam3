@@ -70,8 +70,8 @@ char *flam3_version() {
 }
 
 
-#define CHOOSE_XFORM_GRAIN 16384
-#define CHOOSE_XFORM_GRAIN_M1 16383
+#define CHOOSE_XFORM_GRAIN 1024
+#define CHOOSE_XFORM_GRAIN_M1 (CHOOSE_XFORM_GRAIN-1)
 
 #define random_distrib(v) ((v)[random()%vlen(v)])
                                    
