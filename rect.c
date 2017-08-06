@@ -403,11 +403,7 @@ static void iter_thread(void *fth) {
       badcount = flam3_iterate(&(fthp->cp), sub_batch_size, fuse, fthp->iter_storage, ficp->xform_distrib, &(fthp->rc));
 
       /* Add the badcount to the counter */
-      #if HAVE_GCC_64BIT_ATOMIC_OPS
-        double_atomic_add(&ficp->badvals, badcount);
-      #else
-        ficp->badvals += badcount;
-      #endif
+      double_atomic_add(&ficp->badvals, badcount);
 
       v4d *const iter_storage = (v4d*)fthp->iter_storage;
 

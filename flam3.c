@@ -3640,7 +3640,6 @@ int flam3_estimate_bounding_box(flam3_genome *cp, double eps, int nsamples,
 typedef double bucket[8];
 typedef double abucket[4];
 
-#ifdef HAVE_GCC_64BIT_ATOMIC_OPS
 static inline void
 double_atomic_add(double *dest, double delta)
 {
@@ -3658,7 +3657,6 @@ double_atomic_add(double *dest, double delta)
          int_ptr, old_val.intval, new_val.intval);
    } while (!success);
 }
-#endif /* HAVE_GCC_64BIT_ATOMIC_OPS */
 
 /* 64-bit datatypes */
 #define add_c_to_accum(acc,i,ii,j,jj,wid,hgt,c) do { \
