@@ -23,7 +23,7 @@
 
 #include "private.h"
 
-typedef struct {
+typedef __attribute__((aligned(32)))  struct {
 
   __m128d t; /* Starting coordinates */
   __m128d p; /* Output coordinates */
