@@ -2503,6 +2503,8 @@ static __m128d apply_affine(__m128d p, const v2d *c) {
   return _mm_add_pd(v_p, v_off);
 }
 
+__attribute__((always_inline))
+inline
 static __m128d apply_xform(const flam3_genome * const cp,
     const flam3_xform * const xform, __m128d p, randctx * const rc,
     int * const badvals, int attempts)
