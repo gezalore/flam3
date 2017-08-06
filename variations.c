@@ -2314,10 +2314,6 @@ __m256d apply_xform(flam3_genome * const cp, const int fn, const __m256d p,
   f.t[0] = t[0];
   f.t[1] = t[1];
 
-  /* Pre-xforms go here, and modify the f.t[0] and f.t[1] values */
-  if (cp->xform[fn].has_preblur != 0.0)
-    var67_pre_blur(&f, cp->xform[fn].has_preblur);
-
   /* Always calculate sumsq and sqrt */
   __m128d v_t2 = _mm_mul_pd(f.t, f.t);
   __m128d v_r2 = _mm_hadd_pd(v_t2, v_t2);
