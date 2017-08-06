@@ -23,7 +23,9 @@ typedef __attribute__((aligned(32)))   struct {
   __m128d precalc_v_sqrt;
   __m128d precalc_v_sumsq;
 
-  double precalc_atan, precalc_sina; /* Precalculated, if needed */
+  /* Precalculated, if needed */
+  double precalc_atan;
+  double precalc_sina;
   double precalc_cosa;
   double precalc_atanyx;
 
@@ -2470,7 +2472,11 @@ int prepare_precalc_flags(flam3_genome *cp) {
             } else if (j==VAR_LOG) {
                cp->xform[i].precalc_atan_yx_flag=1;
             }
-            
+
+            cp->xform[i].precalc_any_flag = cp->xform[i].precalc_atan_xy_flag
+            || cp->xform[i].precalc_atan_yx_flag
+            || cp->xform[i].precalc_angles_flag;
+
             totnum++;
          }
       }
@@ -2521,19 +2527,21 @@ __m128d apply_xform(const flam3_genome * const cp,
   f.precalc_v_sqrt = v_r;
 
   /* Check to see if we can precalculate any parts */
-  /* Precalculate atanxy, sin, cos */
-  if (xform->precalc_atan_xy_flag > 0) {
-    f.precalc_atan = atan2(t[0], t[1]);
-  }
+  if (xform->precalc_any_flag) {
+    /* Precalculate atanxy, sin, cos */
+    if (xform->precalc_atan_xy_flag > 0) {
+      f.precalc_atan = atan2(t[0], t[1]);
+    }
 
-  if (xform->precalc_angles_flag > 0) {
-    f.precalc_sina = t[0] / f.precalc_v_sqrt[0];
-    f.precalc_cosa = t[1] / f.precalc_v_sqrt[0];
-  }
+    if (xform->precalc_angles_flag > 0) {
+      f.precalc_sina = t[0] / f.precalc_v_sqrt[0];
+      f.precalc_cosa = t[1] / f.precalc_v_sqrt[0];
+    }
 
-  /* Precalc atanyx */
-  if (xform->precalc_atan_yx_flag > 0) {
-    f.precalc_atanyx = atan2(t[1], t[0]);
+    /* Precalc atanyx */
+    if (xform->precalc_atan_yx_flag > 0) {
+      f.precalc_atanyx = atan2(t[1], t[0]);
+    }
   }
 
   __m128d v_q = _mm_setzero_pd();

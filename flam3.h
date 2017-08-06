@@ -224,9 +224,11 @@ typedef __attribute__((aligned(32)))  struct xform {
    int padding;/* Set to 1 for padding xforms */
    double wind[2]; /* winding numbers */
 
+  int precalc_any_flag;
    int precalc_angles_flag;
    int precalc_atan_xy_flag;
    int precalc_atan_yx_flag;
+
    double has_preblur;
    int has_post;
 
