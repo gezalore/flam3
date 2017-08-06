@@ -210,9 +210,9 @@ typedef struct {
 } flam3_image_store;
 
 
-typedef struct xform {
+typedef __attribute__((aligned(32)))  struct xform {
+  __attribute__((aligned(32))) double c[3][2]; /* the coefs to the affine part of the function */
    double var[flam3_nvariations];   /* interp coefs between variations */
-   double c[3][2];      /* the coefs to the affine part of the function */
    double post[3][2];   /* the post transform */
    double density;      /* probability that this function is chosen. 0 - 1 */
    double color;     /* color coords for this function. 0 - 1 */

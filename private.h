@@ -151,6 +151,7 @@ double flam3_spatial_filter(int knum, double x);
 #define  flam3_mitchell_b   (1.0 / 3.0)
 #define  flam3_mitchell_c   (1.0 / 3.0)
 
+typedef double v2d[2];
 typedef double v4d[4];
 typedef double v8d[8];
 

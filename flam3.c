@@ -1035,6 +1035,17 @@ void flam3_delete_motion_elements(flam3_xform *xf) {
    
 }
 
+void*
+aligned_realloc(int align, void *ptr, size_t sz) {
+  void *unaligned_new_ptr = realloc(ptr, sz);
+  void *aligned_new_ptr = aligned_alloc(align, sz);
+
+  memcpy(aligned_new_ptr, unaligned_new_ptr, sz);
+
+  free(unaligned_new_ptr);
+  return aligned_new_ptr;
+}
+
 /* Xform support functions */
 void flam3_add_xforms(flam3_genome *thiscp, int num_to_add, int interp_padding, int final_flag) {
 
@@ -1047,10 +1058,8 @@ void flam3_add_xforms(flam3_genome *thiscp, int num_to_add, int interp_padding, 
    
    /* !!! must make sure that if final_flag is specified, we don't already have a final xform! !!! */
 
-//   if (thiscp->num_xforms > 0)
-      thiscp->xform = (flam3_xform *)realloc(thiscp->xform, (thiscp->num_xforms + num_to_add) * sizeof(flam3_xform));
-//   else
-//      thiscp->xform = (flam3_xform *)malloc(num_to_add * sizeof(flam3_xform));
+  thiscp->xform = (flam3_xform *) aligned_realloc(32, thiscp->xform,
+      (thiscp->num_xforms + num_to_add) * sizeof(flam3_xform));
 
    thiscp->num_xforms += num_to_add;
 
@@ -1146,7 +1155,8 @@ void flam3_delete_xform(flam3_genome *thiscp, int idx_to_delete) {
    thiscp->num_xforms--;
 
    /* Reduce the memory storage by one xform */
-   thiscp->xform = (flam3_xform *)realloc(thiscp->xform, sizeof(flam3_xform) * thiscp->num_xforms);
+  thiscp->xform = (flam3_xform *) aligned_realloc(32, thiscp->xform,
+      sizeof(flam3_xform) * thiscp->num_xforms);
    
 }
 
