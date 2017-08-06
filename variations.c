@@ -2496,7 +2496,8 @@ static __m128d apply_affine(__m128d p, v2d *c) {
   return _mm_add_pd(v_p, v_off);
 }
 
-__m128d apply_xform(flam3_genome * const cp, const int fn, const __m128d p,
+__m128d apply_xform(const flam3_genome * const cp, const int fn,
+    const __m128d p,
     randctx * const rc, int * const badvals, int attempts)
 {
   /* Return if ran out of attempts */

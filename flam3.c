@@ -264,6 +264,8 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
 
   const int fte = cp->final_xform_enable == 1;
 
+  const flam3_xform * const xform = cp->xform;
+
   if (fte) {
     for (int i = 0; i < n; i += 1) {
       const int fidx = (((unsigned) irand(rc)) & xform_mask) + lastfidx;
@@ -273,16 +275,13 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
 
       p = apply_xform(cp, fn, p, rc, &badvals, 5);
 
-      const double s1 = cp->xform[fn].color_speed;
-      c = s1 * cp->xform[fn].color + (1.0 - s1) * c;
+      const double s1 = xform[fn].color_speed;
+      c = s1 * xform[fn].color + (1.0 - s1) * c;
 
       const __m128d pp = apply_xform(cp, cp->final_xform_index, p, rc, &dummy,
           1);
 
-      s[i][0] = pp[0];
-      s[i][1] = pp[1];
-      s[i][2] = c;
-      s[i][3] = cp->xform[fn].vis_adjusted;
+      s[i] = _mm256_set_pd(xform[fn].vis_adjusted, c, pp[1], pp[0]);
     }
   } else if (xform_gain) {
     for (int i = 0; i < n; i += 1) {
@@ -293,13 +292,10 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
 
       p = apply_xform(cp, fn, p, rc, &badvals, 5);
 
-      const double s1 = cp->xform[fn].color_speed;
-      c = s1 * cp->xform[fn].color + (1.0 - s1) * c;
+      const double s1 = xform[fn].color_speed;
+      c = s1 * xform[fn].color + (1.0 - s1) * c;
 
-      s[i][0] = p[0];
-      s[i][1] = p[1];
-      s[i][2] = c;
-      s[i][3] = cp->xform[fn].vis_adjusted;
+      s[i] = _mm256_set_pd(xform[fn].vis_adjusted, c, p[1], p[0]);
     }
   } else {
     for (int i = 0; i < n; i += 1) {
@@ -308,13 +304,10 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
 
       p = apply_xform(cp, fn, p, rc, &badvals, 5);
 
-      const double s1 = cp->xform[fn].color_speed;
-      c = s1 * cp->xform[fn].color + (1.0 - s1) * c;
+      const double s1 = xform[fn].color_speed;
+      c = s1 * xform[fn].color + (1.0 - s1) * c;
 
-      s[i][0] = p[0];
-      s[i][1] = p[1];
-      s[i][2] = c;
-      s[i][3] = cp->xform[fn].vis_adjusted;
+      s[i] = _mm256_set_pd(xform[fn].vis_adjusted, c, p[1], p[0]);
     }
   }
 
