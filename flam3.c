@@ -235,14 +235,12 @@ static
 int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned short *xform_distrib, randctx *rc) {
   __m256d p;
   __m256d q;
+  __m256d *s = (__m256d *) samples;
   int consec = 0;
   int badvals = 0;
-  v4d *s = (v4d*) samples;
+  int dummy = 0;
 
-  p[0] = s[0][0];
-  p[1] = s[0][1];
-  p[2] = s[0][2];
-  p[3] = s[0][3];
+  p = s[0];
 
   /* Perform precalculations */
   for (int i = 0; i < cp->num_xforms; i++)
@@ -267,42 +265,19 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
     /* Store the last used transform */
     lastfidx = (fn + 1) * xform_gain;
 
-    int bad;
-    q = apply_xform(cp, fn, p, rc, &bad);
-    if (bad) {
-      consec++;
-      badvals++;
-      if (consec < 5) {
-        p[0] = q[0];
-        p[1] = q[1];
-        p[2] = q[2];
-        p[3] = q[3];
-        i -= 1;
-        continue;
-      } else {
-        consec = 0;
-      }
-    } else {
-      consec = 0;
-    }
+    q = apply_xform(cp, fn, p, rc, &badvals, 0);
 
-    p[0] = q[0];
-    p[1] = q[1];
-    p[2] = q[2];
-    p[3] = q[3];
+    p = q;
 
     if (fte) {
-      q = apply_xform(cp, cp->final_xform_index, p, rc, &bad);
+      q = apply_xform(cp, cp->final_xform_index, p, rc, &dummy, 5);
       /* Keep the opacity from the original xform */
       q[3] = p[3];
     }
 
     /* if fuse over, store it */
     if (i >= 0) {
-      s[i][0] = q[0];
-      s[i][1] = q[1];
-      s[i][2] = q[2];
-      s[i][3] = q[3];
+      s[i] = q;
     }
   }
 
@@ -339,7 +314,7 @@ int flam3_xform_preview(flam3_genome *cp, int xi, double range, int numvals, int
    /* Loop over the grid */
    for (xx=-numvals;xx<=numvals;xx++) {
       for (yy=-numvals;yy<=numvals;yy++) {
-      int bad;
+      int dummy;
 
          /* Calculate the input coordinates */
          p[0] = (double)xx * incr;
@@ -347,7 +322,7 @@ int flam3_xform_preview(flam3_genome *cp, int xi, double range, int numvals, int
          
          /* Loop over the depth */
       for (dd = 0; dd < depth; dd++) {
-        p = apply_xform(cp, xi, p, rc, &bad);
+        p = apply_xform(cp, xi, p, rc, &dummy, 5);
       }
 
          result[outi] = p[0];
