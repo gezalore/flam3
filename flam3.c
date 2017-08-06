@@ -237,7 +237,6 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
   v4d q;
   int consec = 0;
   int badvals = 0;
-  int lastxf = 0;
   v4d *s = (v4d*) samples;
 
   p[0] = s[0][0];
@@ -245,23 +244,28 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
   p[2] = s[0][2];
   p[3] = s[0][3];
 
+  /* Perform precalculations */
+  for (int i = 0; i < cp->num_xforms; i++)
+    xform_precalc(cp, i);
+
   assert(
       cp->final_xform_enable != 1
           || cp->xform[cp->final_xform_index].opacity == 1);
 
   const int fte = cp->final_xform_enable == 1;
 
-  /* Perform precalculations */
-  for (int i = 0; i < cp->num_xforms; i++)
-    xform_precalc(cp, i);
+  int lastfidx = 0;
+  const int xform_gain = cp->chaos_enable ? CHOOSE_XFORM_GRAIN : 0;
 
   for (int i = -fuse; i < n; i += 1) {
 
-    int fidx = ((unsigned) irand(rc)) & CHOOSE_XFORM_GRAIN_M1;
-    if (cp->chaos_enable)
-      fidx += lastxf * CHOOSE_XFORM_GRAIN;
+    const int fidx = (((unsigned) irand(rc)) & CHOOSE_XFORM_GRAIN_M1)
+        + lastfidx;
 
     const int fn = xform_distrib[fidx];
+
+    /* Store the last used transform */
+    lastfidx = (fn + 1) * xform_gain;
 
     if (apply_xform(cp, fn, p, q, rc) > 0) {
       consec++;
@@ -278,8 +282,6 @@ int flam3_iterate(flam3_genome *cp, int n, int fuse,  double *samples, unsigned 
     } else
       consec = 0;
 
-    /* Store the last used transform */
-    lastxf = fn + 1;
 
     p[0] = q[0];
     p[1] = q[1];
